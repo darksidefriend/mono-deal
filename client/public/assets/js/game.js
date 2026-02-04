@@ -107,10 +107,9 @@ class GameManager {
       this.showGameOver(data);
     });
     
-    // Ошибки
     this.socket.on('error', (data) => {
-      console.error('❌ Ошибка игры:', data);
-      this.showError(data.message || 'Произошла ошибка в игре');
+        console.error('❌ Ошибка игры:', data);
+        this.addGameLog(`Ошибка: ${data.message || 'Произошла ошибка'}`);
     });
     
     // Отладка
@@ -191,10 +190,12 @@ class GameManager {
     document.getElementById('game-screen').classList.add('active');
   }
   
-  updateGameUI() {
+ updateGameUI() {
     if (!this.gameState) return;
     
-    console.log('🎨 Обновление UI игры', this.gameState);
+    console.log('🎨 Обновление UI игры:', this.gameState);
+    console.log('🃏 Рука из gameState:', this.gameState.ownHand);
+    console.log('👤 Текущий игрок из players:', this.gameState.players?.find(p => p.id === this.playerId));
     
     // Обновляем информацию о ходе
     this.updateTurnInfo();
@@ -208,28 +209,36 @@ class GameManager {
     // Обновляем информацию о игроке
     const currentPlayer = this.gameState.players?.find(p => p.id === this.playerId);
     if (currentPlayer) {
-      console.log('👤 Текущий игрок:', currentPlayer);
-      document.getElementById('player-name').textContent = currentPlayer.name;
-      document.getElementById('hand-count').textContent = currentPlayer.handSize || 0;
-      document.getElementById('bank-total').textContent = `${currentPlayer.bankValue || 0}М`;
-      
-      // Отображаем руку
-      console.log('🃏 Рука игрока:', currentPlayer.hand);
-      this.renderHand(currentPlayer.hand);
-      
-      // Отображаем собственность
-      this.renderProperties(currentPlayer.properties);
-      
-      // Отображаем банк
-      this.renderBank(currentPlayer.bank);
+        console.log('👤 Текущий игрок данные:', currentPlayer);
+        document.getElementById('player-name').textContent = currentPlayer.name;
+        
+        // Используем handSize из currentPlayer, а не считаем длину
+        document.getElementById('hand-count').textContent = currentPlayer.handSize || 0;
+        document.getElementById('bank-total').textContent = `${currentPlayer.bankValue || 0}М`;
+        
+        // ОТЛАДКА: Проверяем, что есть ownHand
+        console.log('🃏 ownHand существует?', !!this.gameState.ownHand);
+        console.log('🃏 ownHand тип:', typeof this.gameState.ownHand);
+        console.log('🃏 ownHand длина:', this.gameState.ownHand?.length);
+        
+        // Отображаем руку из gameState.ownHand
+        this.renderHand(this.gameState.ownHand || []);
+        
+        // Отображаем собственность
+        this.renderProperties(currentPlayer.properties || []);
+        
+        // Отображаем банк
+        this.renderBank(currentPlayer.bank || []);
+    } else {
+        console.warn('⚠️ Текущий игрок не найден в gameState.players');
     }
     
     // Отображаем противников
-    this.renderOpponents(this.gameState.players);
+    this.renderOpponents(this.gameState.players || []);
     
     // Отображаем историю действий
     this.renderActionsHistory();
-  }
+}
   
   updateTurnInfo() {
     const turnInfo = document.getElementById('turn-info');
@@ -292,23 +301,36 @@ class GameManager {
     return bank.reduce((total, card) => total + (card.value || 0), 0);
   }
   
-  renderHand(hand) {
-    const handContainer = document.getElementById('hand-cards');
-    if (!handContainer) return;
-    
-    console.log('🎴 Рендерим руку:', hand);
-    handContainer.innerHTML = '';
-    
-    if (!hand || hand.length === 0) {
-      handContainer.innerHTML = '<div class="empty-hand">Нет карт в руке</div>';
-      return;
+    renderHand(hand) {
+        const handContainer = document.getElementById('hand-cards');
+        if (!handContainer) {
+            console.error('❌ Контейнер для карт не найден');
+            return;
+        }
+        
+        console.log('🎴 Рендерим руку. Длина:', hand.length, 'Карты:', hand);
+        
+        handContainer.innerHTML = '';
+        
+        if (!hand || hand.length === 0) {
+            handContainer.innerHTML = '<div class="empty-hand">Нет карт в руке</div>';
+            return;
+        }
+        
+        // Создаем элементы карт
+        hand.forEach((card, index) => {
+            if (!card) {
+            console.warn(`⚠️ Карта с индексом ${index} undefined или null`);
+            return;
+            }
+            
+            console.log(`🎴 Создание карты ${index}:`, card);
+            const cardElement = this.createCardElement(card, index, 'hand');
+            handContainer.appendChild(cardElement);
+        });
+        
+        console.log('✅ Рука отрендерена');
     }
-    
-    hand.forEach((card, index) => {
-      const cardElement = this.createCardElement(card, index, 'hand');
-      handContainer.appendChild(cardElement);
-    });
-  }
   
   renderProperties(properties) {
     const propertiesContainer = document.getElementById('properties-container');
@@ -470,7 +492,7 @@ class GameManager {
   canPlayCard(card) {
     // Проверяем, можно ли играть карту сейчас
     if (!this.gameState || this.gameState.currentPlayerId !== this.playerId) {
-      return false;
+        return false;
     }
     
     // Проверяем, что есть доступные действия
@@ -480,13 +502,9 @@ class GameManager {
     const actionsLeft = currentPlayer.actionPoints - currentPlayer.actionsUsed;
     if (actionsLeft <= 0) return false;
     
-    // Для денег - всегда можно положить в банк
-    if (card.type === 'money') {
-      return true;
-    }
-    
-    // Для других типов карт проверки будут добавлены позже
-    return false;
+    // Для всех типов карт возвращаем true (временно)
+    // Позже добавим специфические проверки
+    return true;
   }
   
   playCard(card, index) {
@@ -495,11 +513,28 @@ class GameManager {
     const currentPlayer = this.gameState.players.find(p => p.id === this.playerId);
     if (!currentPlayer) return;
     
-    // Проверяем тип карты и вызываем соответствующее действие
-    if (card.type === 'money') {
-      this.putMoneyInBank(card, index);
-    } else {
-      alert('Этот тип карты пока не поддерживается');
+    // В зависимости от типа карты вызываем соответствующий метод
+    switch (card.type) {
+        case 'money':
+        this.putMoneyInBank(card, index);
+        break;
+        case 'property':
+        this.playPropertyCard(card, index);
+        break;
+        case 'action':
+        this.playActionCard(card, index);
+        break;
+        case 'rent':
+        this.playRentCard(card, index);
+        break;
+        case 'building':
+        this.playBuildingCard(card, index);
+        break;
+        case 'wild':
+        this.playWildCard(card, index);
+        break;
+        default:
+        console.log('⚠️ Неизвестный тип карты:', card.type);
     }
   }
   
@@ -523,7 +558,100 @@ class GameManager {
       cardElement.style.pointerEvents = 'none';
     }
   }
-  
+
+  playPropertyCard(card, index) {
+    if (!confirm(`Сыграть карту собственности "${card.name}"? Это займет 1 действие.`)) {
+        return;
+    }
+    
+    console.log('🏠 Отправка карты собственности:', card, index);
+    
+    this.socket.emit('play_property_card', {
+        gameId: this.gameId,
+        playerId: this.playerId,
+        cardIndex: index,
+        cardName: card.name
+    });
+    
+    this.disableCard(index);
+    }
+
+    playActionCard(card, index) {
+        if (!confirm(`Сыграть карту действия "${card.name}"? Это займет 1 действие.`)) {
+            return;
+        }
+        
+        console.log('🎭 Отправка карты действия:', card, index);
+        
+        this.socket.emit('play_action_card', {
+            gameId: this.gameId,
+            playerId: this.playerId,
+            cardIndex: index,
+            cardName: card.name
+        });
+        
+        this.disableCard(index);
+        }
+
+    playRentCard(card, index) {
+        if (!confirm(`Сыграть карту аренды "${card.name}"? Это займет 1 действие.`)) {
+            return;
+        }
+        
+        console.log('💰 Отправка карты аренды:', card, index);
+        
+        this.socket.emit('play_rent_card', {
+            gameId: this.gameId,
+            playerId: this.playerId,
+            cardIndex: index,
+            cardName: card.name
+        });
+        
+        this.disableCard(index);
+    }
+
+    playBuildingCard(card, index) {
+        if (!confirm(`Сыграть карту здания "${card.name}"? Это займет 1 действие.`)) {
+            return;
+        }
+        
+        console.log('🏢 Отправка карты здания:', card, index);
+        
+        this.socket.emit('play_building_card', {
+            gameId: this.gameId,
+            playerId: this.playerId,
+            cardIndex: index,
+            cardName: card.name
+        });
+        
+        this.disableCard(index);
+    }
+
+    playWildCard(card, index) {
+        if (!confirm(`Сыграть универсальную карту "${card.name}"? Это займет 1 действие.`)) {
+            return;
+        }
+        
+        console.log('🎴 Отправка универсальной карты:', card, index);
+        
+        this.socket.emit('play_wild_card', {
+            gameId: this.gameId,
+            playerId: this.playerId,
+            cardIndex: index,
+            cardName: card.name
+        });
+        
+        this.disableCard(index);
+    }
+
+    disableCard(index) {
+        const cardElement = document.querySelector(`.card-item[data-index="${index}"]`);
+        if (cardElement) {
+            cardElement.style.opacity = '0.5';
+            cardElement.style.pointerEvents = 'none';
+        }
+    }
+    
   endTurn() {
     if (!confirm('Завершить ход?')) {
       return;

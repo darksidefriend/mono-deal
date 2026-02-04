@@ -403,22 +403,20 @@ module.exports = (io, socket) => {
         throw new Error('Игра не найдена');
       }
       
-      // Проверяем, что это ход текущего игрока
-      const currentPlayer = game.players.find(p => p.id === data.playerId);
-      if (!currentPlayer) {
+      // Проверяем, что игрок существует в игре
+      const player = game.players.find(p => p.id === data.playerId);
+      if (!player) {
         throw new Error('Игрок не найден в игре');
       }
       
+      // Проверяем, что это ход текущего игрока
       if (game.currentPlayerId !== data.playerId) {
-        throw new Error('Не ваш ход');
+        console.warn(`⚠️ Игрок ${player.name} пытается завершить не свой ход. Текущий игрок: ${game.currentPlayerId}`);
+        // Не кидаем ошибку, просто игнорируем
+        return;
       }
       
-      // Проверяем, что в руке не больше 7 карт
-      if (currentPlayer.hand.length > 7) {
-        throw new Error('У вас слишком много карт в руке. Сбросьте лишние карты.');
-      }
-      
-      // Завершаем ход и получаем следующего игрока
+      // Завершаем ход
       const nextPlayerId = gameManager.endTurn(game);
       const nextPlayer = game.players.find(p => p.id === nextPlayerId);
       
@@ -426,20 +424,20 @@ module.exports = (io, socket) => {
         throw new Error('Не удалось определить следующего игрока');
       }
       
-      console.log(`✅ Ход завершен. Текущий игрок: ${currentPlayer.name}, следующий: ${nextPlayer.name}`);
+      console.log(`✅ Ход завершен. Текущий игрок: ${player.name}, следующий: ${nextPlayer.name}`);
       
       // Отправляем сообщение о смене хода всем игрокам
       io.to(`game_${data.gameId}`).emit('turn_changed', {
         previousPlayerId: data.playerId,
-        previousPlayerName: currentPlayer.name,
+        previousPlayerName: player.name,
         currentPlayerId: nextPlayer.id,
         currentPlayerName: nextPlayer.name
       });
       
       // Отправляем обновление состояния игры всем игрокам
-      game.players.forEach(player => {
-        const gameState = gameManager.getGameState(data.gameId, player.id);
-        io.to(player.socketId).emit('game_update', {
+      game.players.forEach(p => {
+        const gameState = gameManager.getGameState(data.gameId, p.id);
+        io.to(p.socketId).emit('game_update', {
           type: 'state_update',
           state: gameState
         });
@@ -448,12 +446,128 @@ module.exports = (io, socket) => {
       // Отправляем сообщение в лог
       io.to(`game_${data.gameId}`).emit('game_update', {
         type: 'log_message',
-        message: `${currentPlayer.name} завершает ход. Ход переходит к ${nextPlayer.name}`
+        message: `${player.name} завершает ход. Ход переходит к ${nextPlayer.name}`
       });
       
     } catch (error) {
       console.error('❌ Ошибка при завершении хода:', error.message);
-      socket.emit('error', { message: error.message });
+      // Не отправляем ошибку клиенту, чтобы не показывать alert
+      // socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('play_property_card', (data) => {
+    try {
+      console.log('🏠 Игрок играет карту собственности:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Игра не найдена');
+      }
+      
+      // TODO: Добавить логику для собственности
+      const player = game.players.find(p => p.id === data.playerId);
+      
+      // Временная заглушка
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${player.name} играет карту собственности`
+      });
+      
+    } catch (error) {
+      console.error('❌ Ошибка при игре карты собственности:', error.message);
+    }
+  });
+
+  socket.on('play_action_card', (data) => {
+    try {
+      console.log('🎭 Игрок играет карту действия:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Игра не найдена');
+      }
+      
+      // TODO: Добавить логику для действий
+      const player = game.players.find(p => p.id === data.playerId);
+      
+      // Временная заглушка
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${player.name} играет карту действия: ${data.cardName}`
+      });
+      
+    } catch (error) {
+      console.error('❌ Ошибка при игре карты действия:', error.message);
+    }
+  });
+
+  socket.on('play_rent_card', (data) => {
+    try {
+      console.log('💰 Игрок играет карту аренды:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Игра не найдена');
+      }
+      
+      // TODO: Добавить логику для аренды
+      const player = game.players.find(p => p.id === data.playerId);
+      
+      // Временная заглушка
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${player.name} играет карту аренды`
+      });
+      
+    } catch (error) {
+      console.error('❌ Ошибка при игре карты аренды:', error.message);
+    }
+  });
+
+  socket.on('play_building_card', (data) => {
+    try {
+      console.log('🏢 Игрок играет карту здания:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Игра не найдена');
+      }
+      
+      // TODO: Добавить логику для зданий
+      const player = game.players.find(p => p.id === data.playerId);
+      
+      // Временная заглушка
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${player.name} играет карту здания`
+      });
+      
+    } catch (error) {
+      console.error('❌ Ошибка при игре карты здания:', error.message);
+    }
+  });
+
+  socket.on('play_wild_card', (data) => {
+    try {
+      console.log('🎴 Игрок играет универсальную карту:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Игра не найдена');
+      }
+      
+      // TODO: Добавить логику для универсальных карт
+      const player = game.players.find(p => p.id === data.playerId);
+      
+      // Временная заглушка
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${player.name} играет универсальную карту`
+      });
+      
+    } catch (error) {
+      console.error('❌ Ошибка при игре универсальной карты:', error.message);
     }
   });
 

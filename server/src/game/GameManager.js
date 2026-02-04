@@ -171,6 +171,234 @@ class GameManager {
       bankValue: this.calculateBankValue(player.bank)
     };
   }
+
+    // Добавим методы для разных типов карт
+
+  // Играть карту собственности
+  playPropertyCard(game, playerId, cardIndex, selectedColor = null) {
+    console.log('🏠 Играем карту собственности (заглушка)');
+    
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) throw new Error('Игрок не найден');
+    
+    if (game.currentPlayerId !== playerId) {
+      throw new Error('Не ваш ход');
+    }
+    
+    if (player.actionsUsed >= player.actionPoints) {
+      throw new Error('Нет доступных действий');
+    }
+    
+    if (cardIndex < 0 || cardIndex >= player.hand.length) {
+      throw new Error('Неверный индекс карты');
+    }
+    
+    const card = player.hand[cardIndex];
+    
+    if (card.type !== 'property') {
+      throw new Error('Это не карта собственности');
+    }
+    
+    // Временная заглушка - просто перемещаем карту в собственность
+    player.hand.splice(cardIndex, 1);
+    player.properties.push(card);
+    player.actionsUsed += 1;
+    
+    game.addToHistory({
+      type: 'play_property',
+      playerId: playerId,
+      playerName: player.name,
+      card: card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    });
+    
+    return {
+      success: true,
+      card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    };
+  }
+
+  // Играть карту действия
+  playActionCard(game, playerId, cardIndex, targetPlayerId = null, targetCardId = null) {
+    console.log('🎭 Играем карту действия (заглушка)');
+    
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) throw new Error('Игрок не найден');
+    
+    if (game.currentPlayerId !== playerId) {
+      throw new Error('Не ваш ход');
+    }
+    
+    if (player.actionsUsed >= player.actionPoints) {
+      throw new Error('Нет доступных действий');
+    }
+    
+    if (cardIndex < 0 || cardIndex >= player.hand.length) {
+      throw new Error('Неверный индекс карты');
+    }
+    
+    const card = player.hand[cardIndex];
+    
+    if (card.type !== 'action') {
+      throw new Error('Это не карта действия');
+    }
+    
+    // Временная заглушка - просто сбрасываем карту
+    player.hand.splice(cardIndex, 1);
+    game.discardPile.push(card);
+    player.actionsUsed += 1;
+    
+    game.addToHistory({
+      type: 'play_action',
+      playerId: playerId,
+      playerName: player.name,
+      card: card,
+      actionName: card.name,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    });
+    
+    return {
+      success: true,
+      card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    };
+  }
+
+  // Играть карту аренды
+  playRentCard(game, playerId, cardIndex, targetPlayerId = null) {
+    console.log('💰 Играем карту аренды (заглушка)');
+    
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) throw new Error('Игрок не найден');
+    
+    if (game.currentPlayerId !== playerId) {
+      throw new Error('Не ваш ход');
+    }
+    
+    if (player.actionsUsed >= player.actionPoints) {
+      throw new Error('Нет доступных действий');
+    }
+    
+    if (cardIndex < 0 || cardIndex >= player.hand.length) {
+      throw new Error('Неверный индекс карты');
+    }
+    
+    const card = player.hand[cardIndex];
+    
+    if (card.type !== 'rent') {
+      throw new Error('Это не карта аренды');
+    }
+    
+    // Временная заглушка - просто сбрасываем карту
+    player.hand.splice(cardIndex, 1);
+    game.discardPile.push(card);
+    player.actionsUsed += 1;
+    
+    game.addToHistory({
+      type: 'play_rent',
+      playerId: playerId,
+      playerName: player.name,
+      card: card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    });
+    
+    return {
+      success: true,
+      card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    };
+  }
+
+  // Играть карту здания
+  playBuildingCard(game, playerId, cardIndex, propertySetIndex = null) {
+    console.log('🏢 Играем карту здания (заглушка)');
+    
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) throw new Error('Игрок не найден');
+    
+    if (game.currentPlayerId !== playerId) {
+      throw new Error('Не ваш ход');
+    }
+    
+    if (player.actionsUsed >= player.actionPoints) {
+      throw new Error('Нет доступных действий');
+    }
+    
+    if (cardIndex < 0 || cardIndex >= player.hand.length) {
+      throw new Error('Неверный индекс карты');
+    }
+    
+    const card = player.hand[cardIndex];
+    
+    if (card.type !== 'building') {
+      throw new Error('Это не карта здания');
+    }
+    
+    // Временная заглушка - просто сбрасываем карту
+    player.hand.splice(cardIndex, 1);
+    game.discardPile.push(card);
+    player.actionsUsed += 1;
+    
+    game.addToHistory({
+      type: 'play_building',
+      playerId: playerId,
+      playerName: player.name,
+      card: card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    });
+    
+    return {
+      success: true,
+      card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    };
+  }
+
+  // Играть универсальную карту
+  playWildCard(game, playerId, cardIndex, selectedColor = null) {
+    console.log('🎴 Играем универсальную карту (заглушка)');
+    
+    const player = game.players.find(p => p.id === playerId);
+    if (!player) throw new Error('Игрок не найден');
+    
+    if (game.currentPlayerId !== playerId) {
+      throw new Error('Не ваш ход');
+    }
+    
+    if (player.actionsUsed >= player.actionPoints) {
+      throw new Error('Нет доступных действий');
+    }
+    
+    if (cardIndex < 0 || cardIndex >= player.hand.length) {
+      throw new Error('Неверный индекс карты');
+    }
+    
+    const card = player.hand[cardIndex];
+    
+    if (card.type !== 'wild') {
+      throw new Error('Это не универсальная карта');
+    }
+    
+    // Временная заглушка - просто сбрасываем карту
+    player.hand.splice(cardIndex, 1);
+    game.discardPile.push(card);
+    player.actionsUsed += 1;
+    
+    game.addToHistory({
+      type: 'play_wild',
+      playerId: playerId,
+      playerName: player.name,
+      card: card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    });
+    
+    return {
+      success: true,
+      card,
+      actionsLeft: player.actionPoints - player.actionsUsed
+    };
+  }
   
   // 2. Завершить ход
   endTurn(game) {
@@ -235,36 +463,52 @@ class GameManager {
 
   getGameState(gameId, playerId) {
     const game = this.getGame(gameId);
-    if (!game) return null;
+    if (!game) {
+      console.log('❌ Игра не найдена при запросе состояния');
+      return null;
+    }
 
     const player = game.players.find(p => p.id === playerId);
     
-    return {
+    // Логируем для отладки
+    console.log(`🔍 Запрос состояния игры ${gameId} для игрока ${playerId}`);
+    console.log(`👤 Найден игрок:`, player ? player.name : 'не найден');
+    console.log(`🃏 Рука игрока (длина):`, player ? player.hand?.length : 0);
+    
+    if (!player) {
+      console.warn(`⚠️ Игрок ${playerId} не найден в игре ${gameId}`);
+      return null;
+    }
+    
+    const gameState = {
       gameId: game.id,
       status: game.status,
       currentTurn: game.currentTurn,
       turnPhase: game.turnPhase,
-      currentPlayerId: game.getCurrentPlayer().id,
-      currentPlayerName: game.getCurrentPlayer().name,
+      currentPlayerId: game.getCurrentPlayer()?.id,
+      currentPlayerName: game.getCurrentPlayer()?.name,
       players: game.players.map(p => ({
         id: p.id,
         name: p.name,
-        properties: p.properties,
-        bank: p.bank,
+        properties: p.properties || [],
+        bank: p.bank || [],
         bankValue: this.calculateBankValue(p.bank),
-        handSize: p.hand.length,
-        actionPoints: p.actionPoints,
-        actionsUsed: p.actionsUsed,
-        isCurrentPlayer: p.id === player?.id ? p.id === game.getCurrentPlayer().id : false
+        handSize: p.hand?.length || 0,
+        actionPoints: p.actionPoints || 0,
+        actionsUsed: p.actionsUsed || 0,
+        isCurrentPlayer: p.id === playerId
       })),
-      ownHand: player ? player.hand : [],
-      ownActionPoints: player ? player.actionPoints : 0,
-      ownActionsUsed: player ? player.actionsUsed : 0,
-      deckSize: game.deck.length,
-      discardPileSize: game.discardPile.length,
-      discardPileTop: game.discardPile[game.discardPile.length - 1] || null,
-      actionsHistory: game.actionsHistory.slice(-10) // Последние 10 действий
+      ownHand: player.hand || [], // Важно: передаем руку текущего игрока
+      ownActionPoints: player.actionPoints || 0,
+      ownActionsUsed: player.actionsUsed || 0,
+      deckSize: game.deck?.length || 0,
+      discardPileSize: game.discardPile?.length || 0,
+      discardPileTop: game.discardPile?.[game.discardPile.length - 1] || null,
+      actionsHistory: game.actionsHistory?.slice(-10) || []
     };
+    
+    console.log(`✅ Состояние игры сформировано. ownHand длина: ${gameState.ownHand.length}`);
+    return gameState;
   }
 }
 
