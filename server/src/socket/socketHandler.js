@@ -175,38 +175,37 @@ module.exports = (io, socket) => {
         throw new Error('Lobby not found');
       }
 
-      // Проверяем, что игрок - создатель лобби
       if (lobby.creatorId !== socket.playerId) {
         throw new Error('Only creator can start the game');
       }
 
-      // Проверяем, что минимум 2 игрока
       if (lobby.players.length < 2) {
         throw new Error('Need at least 2 players to start');
       }
 
-      // Проверяем, что все готовы
       const allReady = lobby.players.every(player => player.isReady);
       if (!allReady) {
         throw new Error('Not all players are ready');
       }
 
+      // Создаем игру
+      const game = gameManager.createGame(lobby);
       lobby.gameStarted = true;
       
       // Уведомляем всех игроков о начале игры
       io.to(`lobby_${socket.lobbyId}`).emit('game_starting', {
-        lobbyId: socket.lobbyId,
+        gameId: game.id,
         players: lobby.players.map(p => ({
           id: p.id,
           name: p.name
         })),
-        redirectUrl: `/game/${socket.lobbyId}`
+        redirectUrl: `/game/${game.id}`
       });
       
       // Обновляем список лобби для остальных
       io.to('lobby').emit('lobbies_updated', lobbyManager.getPublicLobbies());
       
-      console.log(`Game starting in lobby ${lobby.name}`);
+      console.log(`Game ${game.id} starting in lobby ${lobby.name}`);
     } catch (error) {
       socket.emit('error', { message: error.message });
     }
@@ -234,6 +233,127 @@ module.exports = (io, socket) => {
         }
         
         io.to('lobby').emit('lobbies_updated', lobbyManager.getPublicLobbies());
+      }
+    }
+    
+    // Уведомляем всех об отключении игрока
+    socket.to('lobby').emit('player_left', { playerId: socket.playerId });
+  });
+
+   socket.on('join_game', (data) => {
+    try {
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Game not found');
+      }
+
+      const player = game.players.find(p => p.id === socket.playerId);
+      if (!player) {
+        throw new Error('Player not in this game');
+      }
+
+      socket.join(`game_${data.gameId}`);
+      socket.gameId = data.gameId;
+
+      // Отправляем состояние игры игроку
+      const gameState = gameManager.getGameState(data.gameId, socket.playerId);
+      socket.emit('game_state', gameState);
+
+      // Уведомляем других игроков о подключении
+      socket.to(`game_${data.gameId}`).emit('player_reconnected', {
+        playerId: socket.playerId,
+        name: player.name
+      });
+
+      console.log(`Player ${player.name} joined game ${data.gameId}`);
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('play_card', (data) => {
+    try {
+      if (!socket.gameId || !socket.playerId) {
+        throw new Error('Not in game');
+      }
+
+      const game = gameManager.getGame(socket.gameId);
+      if (!game) {
+        throw new Error('Game not found');
+      }
+
+      // Проверяем, что это ход игрока
+      const currentPlayer = game.players[game.currentTurn];
+      if (currentPlayer.id !== socket.playerId) {
+        throw new Error('Not your turn');
+      }
+
+      // Здесь будет логика обработки карты
+      // Пока просто эмулируем
+      console.log(`Player ${socket.playerId} played card:`, data.cardId);
+
+      // Передаем действие другим игрокам
+      socket.to(`game_${socket.gameId}`).emit('card_played', {
+        playerId: socket.playerId,
+        cardId: data.cardId
+      });
+
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('end_turn', () => {
+    try {
+      if (!socket.gameId || !socket.playerId) {
+        throw new Error('Not in game');
+      }
+
+      const game = gameManager.getGame(socket.gameId);
+      if (!game) {
+        throw new Error('Game not found');
+      }
+
+      // Передаем ход следующему игроку
+      game.currentTurn = (game.currentTurn + 1) % game.players.length;
+      
+      // Уведомляем всех игроков
+      io.to(`game_${socket.gameId}`).emit('turn_changed', {
+        currentPlayerId: game.players[game.currentTurn].id,
+        currentTurn: game.currentTurn
+      });
+
+    } catch (error) {
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
+    
+    // Обработка отключения из лобби
+    if (socket.lobbyId && socket.playerId) {
+      const lobby = lobbyManager.getLobby(socket.lobbyId);
+      if (lobby) {
+        const player = lobby.players.find(p => p.id === socket.playerId);
+        if (player) {
+          player.isConnected = false;
+          io.to(`lobby_${socket.lobbyId}`).emit('lobby_updated', lobby.toJSON());
+        }
+      }
+    }
+    
+    // Обработка отключения из игры
+    if (socket.gameId && socket.playerId) {
+      const game = gameManager.getGame(socket.gameId);
+      if (game) {
+        const player = game.players.find(p => p.id === socket.playerId);
+        if (player) {
+          player.isConnected = false;
+          io.to(`game_${socket.gameId}`).emit('player_disconnected', {
+            playerId: socket.playerId
+          });
+        }
       }
     }
     

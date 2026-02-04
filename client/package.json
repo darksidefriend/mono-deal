@@ -1,0 +1,11 @@
+{
+  "name": "monopoly-deal-client",
+  "version": "1.0.0",
+  "description": "Client for Monopoly Deal multiplayer game",
+  "scripts": {
+    "dev": "live-server --port=8080"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
