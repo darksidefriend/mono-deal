@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Deal - Лобби</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Экран логина -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <h1>🎩 Monopoly Deal</h1>
+                <div class="form-group">
+                    <label for="playerName">Ваше имя:</label>
+                    <input type="text" id="playerName" placeholder="Введите ваше имя" maxlength="20">
+                </div>
+                <button id="enterLobby" class="btn-primary">Войти в лобби</button>
+            </div>
+        </div>
+
+        <!-- Экран лобби -->
+        <div id="lobby-screen" class="screen">
+            <div class="lobby-container">
+                <div class="lobby-header">
+                    <h1>🎮 Игровое лобби</h1>
+                    <div class="player-info">
+                        <span id="currentPlayerName"></span>
+                        <button id="createGame" class="btn-success">Создать игру</button>
+                    </div>
+                </div>
+
+                <div class="lobby-content">
+                    <!-- Список доступных игр -->
+                    <div class="games-list">
+                        <h2>Доступные игры</h2>
+                        <div id="gamesContainer" class="games-container">
+                            <!-- Игры будут добавляться динамически -->
+                        </div>
+                    </div>
+
+                    <!-- Список игроков онлайн -->
+                    <div class="online-players">
+                        <h2>Игроки онлайн</h2>
+                        <div id="playersContainer" class="players-container">
+                            <!-- Игроки будут добавляться динамически -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно создания игры -->
+        <div id="createGameModal" class="modal">
+            <div class="modal-content">
+                <h2>Создать новую игру</h2>
+                <div class="form-group">
+                    <label for="gameName">Название игры:</label>
+                    <input type="text" id="gameName" placeholder="Название комнаты" maxlength="30">
+                </div>
+                <div class="form-group">
+                    <label for="maxPlayers">Макс. игроков:</label>
+                    <select id="maxPlayers">
+                        <option value="2">2 игрока</option>
+                        <option value="3">3 игрока</option>
+                        <option value="4">4 игрока</option>
+                        <option value="5" selected>5 игроков</option>
+                    </select>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelCreate" class="btn-secondary">Отмена</button>
+                    <button id="confirmCreate" class="btn-success">Создать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="assets/js/lobby.js"></script>
+</body>
+</html>
