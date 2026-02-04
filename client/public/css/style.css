@@ -1,0 +1,1214 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.screen {
+    display: none;
+    padding: 20px;
+}
+
+.screen.active {
+    display: block;
+}
+
+#lobby {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+#lobby h1 {
+    color: #333;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+}
+
+#lobby h1 i {
+    color: #667eea;
+    margin-right: 10px;
+}
+
+.form-group {
+    margin: 20px 0;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 20px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.buttons {
+    margin: 30px 0;
+}
+
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #38a169;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-warning {
+    background: #ed8936;
+    color: white;
+}
+
+.btn-danger {
+    background: #f56565;
+    color: white;
+}
+
+.divider {
+    margin: 20px 0;
+    color: #666;
+    position: relative;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: #ddd;
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#game-header {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+#turn-indicator {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+#actions-left {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    margin-left: 10px;
+    font-size: 14px;
+}
+
+#game-log {
+    flex: 1;
+    margin: 0 20px;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 5px;
+    max-height: 100px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+#other-players {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.player-box {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.player-box.current {
+    border: 3px solid #667eea;
+}
+
+.player-box h4 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.player-properties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.property-chip {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: white;
+    font-weight: bold;
+}
+
+.property-chip.brown { background: #8B4513; }
+.property-chip.black { background: #333; }
+.property-chip.red { background: #DC2626; }
+.property-chip.green { background: #059669; }
+.property-chip.orange { background: #ED8936; }
+.property-chip.blue { background: #2563EB; }
+.property-chip.purple { background: #7C3AED; }
+.property-chip.sand { background: #D69E2E; }
+.property-chip.yellow { background: #D97706; }
+.property-chip.lightblue { background: #0EA5E9; }
+
+#current-player-area {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+#player-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f7fafc;
+}
+
+#money-bank {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    padding: 8px 15px;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+}
+
+.money-label {
+    margin-right: 5px;
+    opacity: 0.9;
+}
+
+#property-sets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 30px;
+    min-height: 100px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.property-set {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    min-width: 150px;
+    border: 2px solid #e2e8f0;
+    transition: all 0.3s;
+}
+
+.property-set.complete {
+    border-color: #48bb78;
+    background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+}
+
+.property-set-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.property-set-color {
+    font-weight: bold;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.property-set-cards {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.property-card {
+    width: 40px;
+    height: 50px;
+    background: white;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+.property-card.joker {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.property-card.wild {
+    background: linear-gradient(135deg, #fbbf24 0%, #ed8936 100%);
+    color: white;
+}
+
+.building-icon {
+    margin-left: 5px;
+    font-size: 14px;
+}
+
+.building-icon.house { color: #48bb78; }
+.building-icon.hotel { color: #ed8936; }
+
+#hand {
+    margin-top: 30px;
+}
+
+#hand h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+#cards-container {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-height: 120px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.card {
+    width: 80px;
+    height: 110px;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.card.money {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    color: white;
+}
+
+.card.property {
+    background: linear-gradient(135deg, #68d391 0%, #38a169 100%);
+    color: white;
+}
+
+.card.action {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.card.rent {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    color: white;
+}
+
+.card.house {
+    background: linear-gradient(135deg, #48bb78 0%, #2f855a 100%);
+    color: white;
+}
+
+.card.hotel {
+    background: linear-gradient(135deg, #ed8936 0%, #c05621 100%);
+    color: white;
+}
+
+.card.joker {
+    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+    color: white;
+}
+
+.card-header {
+    padding: 8px;
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.card-value {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0,0,0,0.2);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+}
+
+.card-name {
+    padding: 5px;
+    font-size: 9px;
+    text-align: center;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-color {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-size: 8px;
+    opacity: 0.8;
+}
+
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    padding: 20px;
+    background: #667eea;
+    color: white;
+}
+
+.modal-body {
+    padding: 20px;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 20px;
+    background: #f7fafc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-option {
+    padding: 10px 15px;
+    background: #edf2f7;
+    border-radius: 5px;
+    margin: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.modal-option:hover {
+    background: #e2e8f0;
+}
+
+.modal-option.selected {
+    background: #667eea;
+    color: white;
+}
+
+#say-no-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.say-no-prompt {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.say-no-prompt h3 {
+    color: #f56565;
+    margin-bottom: 15px;
+}
+
+.say-no-prompt p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    #game-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    #other-players {
+        grid-template-columns: 1fr;
+    }
+    
+    .card {
+        width: 70px;
+        height: 95px;
+    }
+    
+    .property-set {
+        min-width: 120px;
+    }
+}
+
+/* Добавьте в конец файла */
+#playersList {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+#playersList h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+#playersListItems {
+    list-style: none;
+    padding: 0;
+}
+
+#playersListItems li {
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 5px;
+    border-left: 4px solid #667eea;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.empty-hand-message {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+/* Добавим анимацию для новых карт */
+@keyframes drawCard {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.card.new {
+  animation: drawCard 0.5s ease-out;
+}
+
+/* Добавим индикатор текущего игрока */
+.player-box.current {
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+  border: 2px solid #667eea;
+}
+
+/* Добавим индикатор вашего хода */
+.your-turn-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #48bb78;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  z-index: 100;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.say-no-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.say-no-buttons .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+#skip-say-no-btn {
+    background-color: #718096;
+}
+
+#skip-say-no-btn:hover {
+    background-color: #4a5568;
+}
+
+.no-cards-message {
+    color: #e53e3e;
+    font-weight: bold;
+    text-align: center;
+    padding: 20px;
+    background: #fed7d7;
+    border-radius: 5px;
+}
+
+.payment-card-option {
+    padding: 12px 15px;
+    margin: 8px 0;
+    background: #edf2f7;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.payment-card-option:hover {
+    background: #e2e8f0;
+    transform: translateY(-2px);
+}
+
+.payment-card-option.selected {
+    background: #c6f6d5;
+    border-color: #38a169;
+}
+
+.payment-card-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.card-name {
+    font-weight: bold;
+}
+
+.card-value {
+    color: #2d3748;
+    font-weight: bold;
+}
+
+#payment-total {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    border: 2px solid #cbd5e0;
+}
+
+#payment-total.enough {
+    background: #c6f6d5;
+    border-color: #38a169;
+    color: #22543d;
+}
+
+#payment-total.not-enough {
+    background: #fed7d7;
+    border-color: #fc8181;
+    color: #742a2a;
+}
+
+.payment-note {
+    color: #e53e3e;
+    font-weight: bold;
+    background: #fed7d7;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.rent-info {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    border-left: 4px solid #4299e1;
+}
+
+#modal-overlay.no-close {
+    cursor: default;
+}
+
+#modal-overlay.no-close .modal {
+    pointer-events: auto;
+}
+
+.payment-card-option.auto-selected {
+    border: 2px solid #4299e1;
+    background: #ebf8ff;
+}
+
+.payment-card-option.auto-selected:hover {
+    background: #bee3f8;
+}
+
+/* Стили для информации о пропуске игрока */
+.skipped-player {
+    color: #718096;
+    font-style: italic;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+
+/* Улучшаем видимость кнопок в модальном окне */
+#modal-confirm {
+    min-width: 120px;
+}
+
+#modal-cancel {
+    min-width: 100px;
+}
+
+/* Стили для карт в руке */
+#cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+    background: #f7fafc;
+    border-radius: 8px;
+    min-height: 150px;
+}
+
+.card {
+    width: 120px;
+    height: 160px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s;
+    overflow: hidden;
+}
+
+.card.playable:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 12px rgba(0,0,0,0.2);
+}
+
+.card-header {
+    padding: 10px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header.money { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
+.card-header.property { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
+.card-header.action { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.card-header.rent { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); }
+
+.card-description {
+    padding: 10px;
+    font-size: 12px;
+    color: #4a5568;
+    height: 100px;
+    overflow-y: auto;
+}
+
+/* Цвета для property-карт */
+.card-header.brown { background: #8B4513; }
+.card-header.black { background: #333; }
+.card-header.red { background: #DC2626; }
+.card-header.green { background: #059669; }
+.card-header.orange { background: #ED8936; }
+.card-header.blue { background: #2563EB; }
+.card-header.purple { background: #7C3AED; }
+.card-header.sand { background: #D69E2E; }
+.card-header.yellow { background: #D97706; }
+.card-header.lightblue { background: #0EA5E9; }
+
+/* В client/public/css/style.css */
+.rent-prompt {
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.response-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.option-section {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+}
+
+.option-section h4 {
+    margin-bottom: 15px;
+    color: #2d3748;
+}
+
+.cards-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #edf2f7;
+    border-radius: 6px;
+}
+
+.payment-card {
+    width: 80px;
+    height: 100px;
+    background: white;
+    border: 2px solid #cbd5e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 10px;
+    text-align: center;
+}
+
+.payment-card:hover {
+    border-color: #4299e1;
+    transform: translateY(-2px);
+}
+
+.payment-card.selected {
+    border-color: #48bb78;
+    background: #c6f6d5;
+}
+
+.card-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-preview.money {
+    color: #d69e2e;
+}
+
+.card-preview.property {
+    color: #38a169;
+}
+
+.card-name {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.card-value {
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.payment-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: #edf2f7;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.payment-summary p {
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+/* В client/public/css/style.css */
+.rent-prompt {
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.response-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.option-section {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #e2e8f0;
+}
+
+.option-section h4 {
+    margin-bottom: 15px;
+    color: #2d3748;
+}
+
+.cards-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #edf2f7;
+    border-radius: 6px;
+}
+
+.payment-card {
+    width: 80px;
+    height: 100px;
+    background: white;
+    border: 2px solid #cbd5e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 10px;
+    text-align: center;
+}
+
+.payment-card:hover {
+    border-color: #4299e1;
+    transform: translateY(-2px);
+}
+
+.payment-card.selected {
+    border-color: #48bb78;
+    background: #c6f6d5;
+}
+
+.card-preview {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-preview.money {
+    color: #d69e2e;
+}
+
+.card-preview.property {
+    color: #38a169;
+}
+
+.card-name {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.card-value {
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.payment-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: #edf2f7;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.payment-summary p {
+    margin: 10px 0;
+    font-weight: bold;
+}
+
+/* В client/public/css/style.css добавляем: */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-btn:hover:not(.active):not(.disabled) {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.tab-btn.active {
+    background: #667eea;
+    color: white;
+}
+
+.tab-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.rent-info {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.rent-info p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.payment-section, .sayno-section {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.cards-instruction {
+    margin-bottom: 15px;
+    color: #718096;
+    font-size: 14px;
+}
+
+.cards-selection {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+    margin: 15px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #f7fafc;
+    border-radius: 6px;
+}
+
+.payment-card {
+    width: 90px;
+    height: 120px;
+    background: white;
+    border: 2px solid #cbd5e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 10px;
+    text-align: center;
+    position: relative;
+}
+
+.payment-card:hover {
+    border-color: #4299e1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.payment-card.selected {
+    border-color: #48bb78;
+    background: #c6f6d5;
+    box-shadow: 0 0 0 2px #48bb78;
+}
+
+.payment-card .card-source {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 12px;
+}
+
+.payment-summary {
+    margin-top: 20px;
+    padding: 15px;
+    background: #edf2f7;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.sayno-info {
+    text-align: center;
+    padding: 20px;
+}
+
+.sayno-card-preview {
+    display: inline-block;
+    margin: 20px 0;
+}
+
+.warning {
+    color: #e53e3e;
+    font-weight: bold;
+    margin-top: 15px;
+    padding: 10px;
+    background: #fed7d7;
+    border-radius: 6px;
+    border: 1px solid #fc8181;
+}
+
+.no-cards {
+    text-align: center;
+    padding: 20px;
+    color: #718096;
+    font-style: italic;
+}

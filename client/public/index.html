@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Deal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="lobby" class="screen active">
+            <h1><i class="fas fa-dice"></i> Monopoly Deal</h1>
+            <div class="form-group">
+                <input type="text" id="playerName" placeholder="Введите ваше имя" maxlength="20">
+            </div>
+            <div class="buttons">
+                <button id="createGameBtn" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Создать игру
+                </button>
+                <div class="divider">или</div>
+                <div class="form-group">
+                    <input type="text" id="gameCode" placeholder="Код игры" maxlength="6">
+                </div>
+                <button id="joinGameBtn" class="btn btn-secondary">
+                    <i class="fas fa-sign-in-alt"></i> Присоединиться
+                </button>
+            </div>
+            <div id="gameInfo" class="hidden">
+                <p>Код игры: <span id="displayGameCode"></span></p>
+                <p>Игроков в комнате: <span id="playerCount">1</span>/5</p>
+                <div id="playersList">
+                    <h3>Игроки:</h3>
+                    <ul id="playersListItems"></ul>
+                </div>
+                <button id="startGameBtn" class="btn btn-success hidden">
+                    <i class="fas fa-play"></i> Начать игру
+                </button>
+            </div>
+        </div>
+
+        <div id="game" class="screen hidden">
+            <div id="game-header">
+                <div id="turn-indicator">
+                <span id="current-player"></span>
+                <span id="actions-left"></span>
+                </div>
+                <div id="game-log"></div>
+                <button id="endTurnBtn" class="btn btn-warning">
+                <i class="fas fa-forward"></i> Завершить ход
+                </button>
+            </div>
+
+            <div id="your-turn-indicator" class="your-turn-indicator hidden">
+                <i class="fas fa-play-circle"></i> Ваш ход!
+            </div>
+
+            <div id="game-board">
+                <div id="other-players"></div>
+                
+                <div id="current-player-area">
+                    <div id="player-info">
+                        <h3>Вы: <span id="my-name"></span></h3>
+                        <div id="money-bank">
+                            <span class="money-label">Банк:</span>
+                            <span id="money-amount">0М</span>
+                        </div>
+                    </div>
+                    
+                    <div id="property-sets"></div>
+                    
+                    <div id="hand">
+                        <h3>Ваша рука (<span id="hand-count">0</span>)</h3>
+                        <div id="cards-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="modal-overlay" class="hidden">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h3 id="modal-title"></h3>
+                    </div>
+                    <div class="modal-body">
+                        <div id="modal-content"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Убираем кнопку "Отмена" для окна оплаты ренты -->
+                        <!-- Для других окон она будет добавляться динамически -->
+                        <button id="modal-cancel" class="btn btn-secondary hidden">Отмена</button>
+                        <button id="modal-confirm" class="btn btn-primary">Подтвердить</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="say-no-overlay" class="hidden">
+                <div class="say-no-prompt">
+                    <h3>На вас играют карту!</h3>
+                    <p id="say-no-message"></p>
+                    <div class="say-no-buttons">
+                        <button id="say-no-btn" class="btn btn-danger">
+                            <i class="fas fa-ban"></i> Просто скажи НЕТ!
+                        </button>
+                        <button id="skip-say-no-btn" class="btn btn-secondary">
+                            Пропустить (нет карты "Нет")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/socket.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>
