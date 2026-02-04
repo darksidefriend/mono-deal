@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Deal - Игра</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/game.css">
+</head>
+<body>
+    <div id="game-app">
+        <!-- Загрузочный экран -->
+        <div id="loading-screen" class="screen active">
+            <div class="loading-container">
+                <h1>🎮 Monopoly Deal</h1>
+                <div class="loading-spinner"></div>
+                <p id="loading-message">Подключение к игре...</p>
+                <div id="loading-error" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Игровой интерфейс -->
+        <div id="game-screen" class="screen">
+            <!-- Шапка игры -->
+            <div class="game-header">
+                <div class="game-info">
+                    <h1>Monopoly Deal</h1>
+                    <div class="game-status">
+                        <span id="turn-info">Ожидание хода...</span>
+                        <span id="phase-info">Фаза: Розыгрыш</span>
+                    </div>
+                </div>
+                <div class="game-controls">
+                    <button id="end-turn-btn" class="btn-secondary" disabled>Завершить ход</button>
+                    <button id="leave-game-btn" class="btn-secondary">Покинуть игру</button>
+                </div>
+            </div>
+
+            <!-- Основное поле игры -->
+            <div class="game-main">
+                <!-- Противники -->
+                <div class="opponents-section">
+                    <h2>Противники</h2>
+                    <div id="opponents-container" class="players-container">
+                        <!-- Противники будут загружаться здесь -->
+                    </div>
+                </div>
+
+                <!-- Игровое поле -->
+                <div class="board-section">
+                    <div class="deck-info">
+                        <div class="deck">
+                            <div class="card back"></div>
+                            <span id="deck-count">0</span>
+                        </div>
+                        <div class="discard-pile">
+                            <div class="card"></div>
+                            <span>Сброс</span>
+                        </div>
+                    </div>
+                    
+                    <div class="game-log">
+                        <h3>Журнал игры</h3>
+                        <div id="game-log-messages"></div>
+                    </div>
+                </div>
+
+                <!-- Игрок -->
+                <div class="player-section">
+                    <div class="player-info">
+                        <h2 id="player-name">Вы</h2>
+                        <div class="player-stats">
+                            <span>Карт в руке: <span id="hand-count">0</span></span>
+                            <span>Банк: <span id="bank-total">0М</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Карты в руке -->
+                    <div class="hand-container">
+                        <h3>Ваша рука</h3>
+                        <div id="hand-cards" class="cards-container">
+                            <!-- Карты будут загружаться здесь -->
+                        </div>
+                    </div>
+
+                    <!-- Собственность и банк -->
+                    <div class="player-board">
+                        <div class="properties-section">
+                            <h3>Ваша собственность</h3>
+                            <div id="properties-container" class="properties-container">
+                                <!-- Собственность будет загружаться здесь -->
+                            </div>
+                        </div>
+                        
+                        <div class="bank-section">
+                            <h3>Банк</h3>
+                            <div id="bank-cards" class="cards-container">
+                                <!-- Карты банка будут загружаться здесь -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Чат игры -->
+            <div class="game-chat">
+                <h3>Чат игры</h3>
+                <div id="game-chat-messages" class="chat-messages"></div>
+                <div class="chat-input">
+                    <input type="text" id="game-chat-input" placeholder="Введите сообщение...">
+                    <button id="game-chat-send" class="btn-primary">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="assets/js/game.js"></script>
+</body>
+</html>

@@ -1,3 +1,18 @@
+/* Добавим в начало файла */
+:root {
+  --color-brown: #8B4513;
+  --color-blue: #3498db;
+  --color-green: #2ecc71;
+  --color-red: #e74c3c;
+  --color-yellow: #f1c40f;
+  --color-purple: #9b59b6;
+  --color-orange: #e67e22;
+  --color-black: #2c3e50;
+  --color-sand: #d35400;
+  --color-light-blue: #85c1e9;
+  --color-wild: #95a5a6;
+}
+
 * {
   margin: 0;
   padding: 0;

@@ -36,8 +36,16 @@ console.log('Environment:', process.env.NODE_ENV);
 // Routes
 app.use('/api', apiRoutes);
 
-// Handle 404
+// Добавим перед обработчиком 404
+app.get('/game.html', (req, res) => {
+  const gamePath = path.join(__dirname, '../../client/public/game.html');
+  console.log('📁 Отправка game.html:', gamePath);
+  res.sendFile(gamePath);
+});
+
+// Обработка 404
 app.use((req, res) => {
+  console.log('📄 Запрос несуществующего файла:', req.path);
   res.status(404).sendFile('index.html', { root: clientPath });
 });
 

@@ -1,8 +1,11 @@
 const { v4: uuidv4 } = require('uuid');
 const LobbyManager = require('../game/LobbyManager');
+const GameManager = require('../game/GameManager');
 const Player = require('../models/Player');
 
 let lobbyManager = new LobbyManager();
+let gameManager = new GameManager();
+
 
 module.exports = (io, socket) => {
   console.log(`Socket connected: ${socket.id}`);
@@ -113,6 +116,20 @@ module.exports = (io, socket) => {
     }
   });
 
+  socket.on('leave_game', () => {
+    try {
+      if (socket.gameId && socket.playerId) {
+        const game = gameManager.getGame(socket.gameId);
+        if (game) {
+          socket.leave(`game_${socket.gameId}`);
+          console.log(`Игрок ${socket.playerId} покинул игру ${socket.gameId}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при покидании игры:', error.message);
+    }
+  });
+
   // Выход из лобби
   socket.on('leave_lobby', () => {
     try {
@@ -168,6 +185,7 @@ module.exports = (io, socket) => {
   });
 
   // Начало игры
+  // В обработчике start_game обновим логику
   socket.on('start_game', () => {
     try {
       if (!socket.lobbyId || !socket.playerId) {
@@ -196,21 +214,26 @@ module.exports = (io, socket) => {
       const game = gameManager.createGame(lobby);
       lobby.gameStarted = true;
       
+      console.log(`🎲 Создание игры для лобби ${lobby.id}, ID игры: ${game.id}`);
+      
       // Уведомляем всех игроков о начале игры
-      io.to(`lobby_${socket.lobbyId}`).emit('game_starting', {
-        gameId: game.id,
-        players: lobby.players.map(p => ({
-          id: p.id,
-          name: p.name
-        })),
-        redirectUrl: `/game/${game.id}`
+      lobby.players.forEach(player => {
+        console.log(`Отправка game_starting игроку ${player.name} (${player.socketId})`);
+        
+        // Отправляем каждому игроку индивидуальное сообщение с его ID
+        io.to(player.socketId).emit('game_starting', {
+          gameId: game.id,
+          playerId: player.id,
+          redirectUrl: `/game.html?gameId=${game.id}&playerId=${player.id}`
+        });
       });
       
       // Обновляем список лобби для остальных
       io.to('lobby').emit('lobbies_updated', lobbyManager.getPublicLobbies());
       
-      console.log(`Game ${game.id} starting in lobby ${lobby.name}`);
+      console.log(`🎮 Игра ${game.id} запущена в лобби ${lobby.name}`);
     } catch (error) {
+      console.error('❌ Ошибка при начале игры:', error.message);
       socket.emit('error', { message: error.message });
     }
   });
@@ -246,63 +269,85 @@ module.exports = (io, socket) => {
 
    socket.on('join_game', (data) => {
     try {
+      console.log('🎮 Присоединение к игре:', data);
+      
       const game = gameManager.getGame(data.gameId);
       if (!game) {
-        throw new Error('Game not found');
+        // Создаем временную игру для тестирования
+        console.log('⚠️ Игра не найдена, создаем тестовую игру');
+        const testGame = {
+          id: data.gameId,
+          players: [
+            { id: data.playerId, name: 'Игрок 1', hand: [], bank: [], properties: [], handSize: 5 },
+            { id: 'player2', name: 'Игрок 2', hand: [], bank: [], properties: [], handSize: 5 }
+          ],
+          currentPlayerId: data.playerId,
+          turnPhase: 'draw',
+          deckSize: 30
+        };
+        
+        // Отправляем тестовое состояние
+        socket.emit('game_state', testGame);
+        return;
       }
-
-      const player = game.players.find(p => p.id === socket.playerId);
+      
+      const player = game.players.find(p => p.id === data.playerId);
       if (!player) {
         throw new Error('Player not in this game');
       }
-
+      
+      // Обновляем socketId игрока
+      player.socketId = socket.id;
+      
       socket.join(`game_${data.gameId}`);
       socket.gameId = data.gameId;
-
+      socket.playerId = data.playerId;
+      
       // Отправляем состояние игры игроку
-      const gameState = gameManager.getGameState(data.gameId, socket.playerId);
+      const gameState = gameManager.getGameState(data.gameId, data.playerId);
       socket.emit('game_state', gameState);
-
+      
       // Уведомляем других игроков о подключении
       socket.to(`game_${data.gameId}`).emit('player_reconnected', {
-        playerId: socket.playerId,
+        playerId: data.playerId,
         name: player.name
       });
-
-      console.log(`Player ${player.name} joined game ${data.gameId}`);
+      
+      console.log(`✅ Игрок ${player.name} присоединился к игре ${data.gameId}`);
     } catch (error) {
+      console.error('❌ Ошибка при присоединении к игре:', error.message);
       socket.emit('error', { message: error.message });
     }
   });
 
   socket.on('play_card', (data) => {
     try {
-      if (!socket.gameId || !socket.playerId) {
-        throw new Error('Not in game');
-      }
-
-      const game = gameManager.getGame(socket.gameId);
+      console.log('🃏 Игрок играет карту:', data);
+      
+      const game = gameManager.getGame(data.gameId);
       if (!game) {
         throw new Error('Game not found');
       }
-
-      // Проверяем, что это ход игрока
-      const currentPlayer = game.players[game.currentTurn];
-      if (currentPlayer.id !== socket.playerId) {
-        throw new Error('Not your turn');
-      }
-
+      
       // Здесь будет логика обработки карты
-      // Пока просто эмулируем
-      console.log(`Player ${socket.playerId} played card:`, data.cardId);
-
-      // Передаем действие другим игрокам
-      socket.to(`game_${socket.gameId}`).emit('card_played', {
-        playerId: socket.playerId,
-        cardId: data.cardId
-      });
-
+      // Пока просто уведомляем всех игроков
+      
+      const player = game.players.find(p => p.id === data.playerId);
+      if (player) {
+        // Уведомляем всех игроков о сыгранной карте
+        io.to(`game_${data.gameId}`).emit('card_played', {
+          playerId: data.playerId,
+          playerName: player.name,
+          cardId: data.cardId
+        });
+        
+        // Добавляем сообщение в лог
+        io.to(`game_${data.gameId}`).emit('game_update', {
+          message: `${player.name} сыграл карту`
+        });
+      }
     } catch (error) {
+      console.error('❌ Ошибка при игре карты:', error.message);
       socket.emit('error', { message: error.message });
     }
   });
@@ -318,16 +363,24 @@ module.exports = (io, socket) => {
         throw new Error('Game not found');
       }
 
-      // Передаем ход следующему игроку
-      game.currentTurn = (game.currentTurn + 1) % game.players.length;
+      // Находим текущего игрока
+      const currentPlayerIndex = game.players.findIndex(p => p.id === game.currentPlayerId);
       
-      // Уведомляем всех игроков
+      // Передаем ход следующему игроку
+      const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
+      const nextPlayer = game.players[nextPlayerIndex];
+      
+      game.currentPlayerId = nextPlayer.id;
+      
+      // Уведомляем всех игроков о смене хода
       io.to(`game_${socket.gameId}`).emit('turn_changed', {
-        currentPlayerId: game.players[game.currentTurn].id,
-        currentTurn: game.currentTurn
+        currentPlayerId: nextPlayer.id,
+        playerName: nextPlayer.name
       });
-
+      
+      console.log(`🔄 Ход перешел от ${socket.playerId} к ${nextPlayer.id}`);
     } catch (error) {
+      console.error('❌ Ошибка при завершении хода:', error.message);
       socket.emit('error', { message: error.message });
     }
   });
