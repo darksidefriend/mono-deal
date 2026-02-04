@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Deal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Экран лобби -->
+        <div id="lobby" class="screen">
+            <h1>Monopoly Deal</h1>
+            <div class="form-group">
+                <input type="text" id="playerName" placeholder="Ваше имя" maxlength="20">
+            </div>
+            <div class="button-group">
+                <button id="createGameBtn">Создать игру</button>
+                <div class="divider">ИЛИ</div>
+                <input type="text" id="roomCode" placeholder="Код комнаты" maxlength="6">
+                <button id="joinGameBtn">Присоединиться</button>
+            </div>
+        </div>
+
+        <!-- Экран ожидания игроков -->
+        <div id="waitingRoom" class="screen hidden">
+            <h2>Ожидание игроков</h2>
+            <div class="room-info">
+                <p>Код комнаты: <span id="roomIdDisplay"></span></p>
+                <p>Игроков: <span id="playerCount">1/5</span></p>
+            </div>
+            <div id="playerList"></div>
+            <button id="startGameBtn" disabled>Начать игру (минимум 2 игрока)</button>
+        </div>
+
+        <!-- Игровой экран -->
+        <div id="gameScreen" class="screen hidden">
+            <div class="game-header">
+                <div class="room-info">Комната: <span id="gameRoomId"></span></div>
+                <div class="turn-info">Ход: <span id="currentPlayerName"></span></div>
+                <div class="actions-info">Действий осталось: <span id="actionsCounter">3</span></div>
+            </div>
+
+            <div class="game-container">
+                <!-- Противники -->
+                <div class="opponents-container">
+                    <div id="opponents"></div>
+                </div>
+
+                <!-- Игровое поле текущего игрока -->
+                <div class="player-area">
+                    <div class="player-info">
+                        <h3 id="myPlayerName"></h3>
+                        <div class="money">Деньги: <span id="myMoney">0М</span></div>
+                        <div class="sets">Полные комплекты: <span id="mySets">0</span></div>
+                    </div>
+
+                    <div class="properties-container">
+                        <h4>Моя собственность:</h4>
+                        <div id="myProperties" class="properties-grid"></div>
+                        
+                        <h4>Мои здания:</h4>
+                        <div id="myBuildings" class="buildings-grid"></div>
+                        
+                        <h4>Мой банк:</h4>
+                        <div id="myBank" class="bank-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Рука текущего игрока -->
+                <div class="hand-container">
+                    <h4>Ваша рука (<span id="handCount">0</span>/7):</h4>
+                    <div id="playerHand" class="hand-grid"></div>
+                    
+                    <div class="game-controls">
+                        <button id="endTurnBtn" disabled>Завершить ход</button>
+                        <button id="discardBtn" class="hidden">Сбросить лишние карты</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="paymentModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Оплата</h3>
+            <p id="paymentMessage"></p>
+            <div id="paymentOptions"></div>
+            <div class="modal-buttons">
+                <button id="payBtn">Оплатить</button>
+                <button id="sayNoBtn" class="hidden">Сказать "Нет"</button>
+                <button id="cancelPaymentBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chooseColorModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Выберите цвет</h3>
+            <div id="colorOptions" class="color-grid"></div>
+            <div class="modal-buttons">
+                <button id="confirmColorBtn">Подтвердить</button>
+                <button id="cancelColorBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chooseTargetModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Выберите цель</h3>
+            <div id="targetOptions"></div>
+            <div class="modal-buttons">
+                <button id="confirmTargetBtn">Подтвердить</button>
+                <button id="cancelTargetBtn">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/client.js"></script>
+</body>
+</html>

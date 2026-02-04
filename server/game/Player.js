@@ -1,226 +1,134 @@
-const { v4: uuidv4 } = require('uuid');
-
 class Player {
-    constructor(socketId, name, index) {
-        this.id = socketId;
-        this.socketId = socketId;
+    constructor(id, name, socketId) {
+        this.id = id;
         this.name = name;
-        this.index = index;
+        this.socketId = socketId;
         this.hand = [];
-        this.properties = [];
-        this.moneyBank = [];
-        this.actionsLeft = 0;
-        this.hasWon = false;
+        this.bank = []; // Карты денег на столе
+        this.properties = {
+            brown: [],
+            black: [],
+            red: [],
+            green: [],
+            orange: [],
+            blue: [],
+            purple: [],
+            sand: [],
+            yellow: [],
+            lightblue: []
+        };
+        this.buildings = []; // Дома и отели
+        this.isActive = true;
+        this.actionsPlayed = 0;
+        this.hasDrawnCards = false;
     }
 
-    drawCard(card) {
-        if (card) {
-            this.hand.push(card);
+    addToHand(cards) {
+        this.hand.push(...cards);
+    }
+
+    playCard(cardId) {
+        const cardIndex = this.hand.findIndex(card => card.id === cardId);
+        if (cardIndex === -1) return null;
+        
+        return this.hand.splice(cardIndex, 1)[0];
+    }
+
+    addToBank(card) {
+        this.bank.push(card);
+    }
+
+    addProperty(card, color = null) {
+        const targetColor = color || card.currentColor;
+        if (this.properties[targetColor]) {
+            this.properties[targetColor].push(card);
+            return true;
         }
+        return false;
     }
 
-    getCardFromHand(cardId) {
-        return this.hand.find(c => c.id === cardId);
-    }
-
-    getCardFromAnywhere(cardId) {
-        // Check hand
-        let card = this.hand.find(c => c.id === cardId);
-        if (card) return card;
-        
-        // Check money bank
-        card = this.moneyBank.find(c => c.id === cardId);
-        if (card) return card;
-        
-        // Check properties
-        for (const prop of this.properties) {
-            card = prop.cards.find(c => c.id === cardId);
-            if (card) return card;
+    removeProperty(cardId, color) {
+        const propIndex = this.properties[color].findIndex(c => c.id === cardId);
+        if (propIndex !== -1) {
+            return this.properties[color].splice(propIndex, 1)[0];
         }
-        
         return null;
     }
 
-    removeCardFromHand(cardId) {
-        const index = this.hand.findIndex(c => c.id === cardId);
-        if (index !== -1) {
-            return this.hand.splice(index, 1)[0];
-        }
-        return null;
+    getPropertySetCount(color) {
+        return this.properties[color]?.length || 0;
     }
 
-    removeCardFromBank(cardId) {
-        const index = this.moneyBank.findIndex(c => c.id === cardId);
-        if (index !== -1) {
-            return this.moneyBank.splice(index, 1)[0];
-        }
-        return null;
-    }
+    getCompleteSets() {
+        const completeSets = [];
+        const setRequirements = {
+            brown: 2, black: 4, red: 3, green: 3, orange: 3,
+            blue: 2, purple: 3, sand: 2, yellow: 3, lightblue: 3
+        };
 
-    removeCardFromAnywhere(cardId) {
-        let card = this.removeCardFromHand(cardId);
-        if (card) return card;
-        
-        card = this.removeCardFromBank(cardId);
-        if (card) return card;
-        
-        // Check properties
-        for (const prop of this.properties) {
-            const index = prop.cards.findIndex(c => c.id === cardId);
-            if (index !== -1) {
-                return prop.cards.splice(index, 1)[0];
+        for (const [color, cards] of Object.entries(this.properties)) {
+            if (cards.length >= setRequirements[color]) {
+                completeSets.push(color);
             }
         }
-        
-        return null;
-    }
 
-    addMoney(card) {
-        this.moneyBank.push(card);
-    }
-
-    getMoneyCards(amount) {
-        let selectedCards = [];
-        let totalValue = 0;
-        
-        // Sort money cards by value (ascending)
-        const sortedMoney = [...this.moneyBank].sort((a, b) => a.value - b.value);
-        
-        for (const card of sortedMoney) {
-            if (totalValue >= amount) break;
-            
-            selectedCards.push(card);
-            totalValue += card.value;
-        }
-        
-        if (totalValue >= amount) {
-            return selectedCards;
-        }
-        
-        return selectedCards;
+        return completeSets;
     }
 
     getTotalMoney() {
-        return this.moneyBank.reduce((sum, card) => sum + (card.value || 0), 0);
+        let total = 0;
+        // Деньги в банке
+        this.bank.forEach(card => {
+            if (card.type === 'money') total += card.value;
+        });
+        // Собственность тоже считается как деньги при необходимости
+        return total;
     }
 
-    isComplete() {
-        const needed = COMPLETE_SETS[this.color];
-        const actual = this.cards.length; // Джокеры уже учитываются как карты
-        return actual >= needed;
+    canPay(amount) {
+        return this.getTotalMoney() >= amount;
     }
 
-    getPropertySet(propertySetId) {
-        return this.properties.find(p => p.id === propertySetId);
-    }
-
-    getPropertySetByColor(color) {
-        console.log(`getPropertySetByColor: looking for ${color}`);
-        console.log(`Available property sets:`, this.properties.map(p => ({
-            color: p.color,
-            cards: p.cards.map(c => ({name: c.name, color: c.color, wild: c.wild, selectedColor: c.selectedColor}))
-        })));
+    pay(amount) {
+        // Реализация выбора карт для оплаты
+        // Возвращает массив карт для оплаты
+        const paymentCards = [];
+        let remaining = amount;
         
-        // Сначала ищем комплект с точным совпадением цвета
-        for (const propertySet of this.properties) {
-            if (propertySet.color === color) {
-                console.log(`Found exact match: ${propertySet.color}`);
-                return propertySet;
+        // Сначала используем деньги из банка
+        this.bank.sort((a, b) => b.value - a.value);
+        
+        for (let i = this.bank.length - 1; i >= 0; i--) {
+            if (remaining <= 0) break;
+            if (this.bank[i].type === 'money') {
+                paymentCards.push(this.bank[i]);
+                remaining -= this.bank[i].value;
+                this.bank.splice(i, 1);
             }
         }
         
-        // Если не нашли, ищем комплект, содержащий карты этого цвета
-        for (const propertySet of this.properties) {
-            const hasCardOfColor = propertySet.cards.some(card => {
-                if (card.type === 'joker') return false;
-                
-                let cardColor = card.color;
-                if (card.wild && card.selectedColor) {
-                    cardColor = card.selectedColor;
+        // Если не хватает, используем собственность
+        if (remaining > 0) {
+            const colors = Object.keys(this.properties);
+            for (const color of colors) {
+                if (remaining <= 0) break;
+                if (this.properties[color].length > 0) {
+                    const property = this.properties[color].pop();
+                    paymentCards.push(property);
+                    remaining -= property.value;
                 }
-                
-                return cardColor === color;
-            });
-            
-            if (hasCardOfColor) {
-                console.log(`Found property set containing cards of color ${color}`);
-                return propertySet;
             }
         }
         
-        console.log(`No property set found for color ${color}`);
-        return null;
+        return { paymentCards, remaining };
     }
 
-    getIncompletePropertySet(color) {
-        const prop = this.getPropertySetByColor(color);
-        return prop && !prop.isComplete() ? prop : null;
+    hasCardInHand(cardName) {
+        return this.hand.some(card => card.name === cardName);
     }
 
-    getCompletePropertySet(color) {
-        const prop = this.getPropertySetByColor(color);
-        return prop && prop.isComplete() ? prop : null;
-    }
-
-    createPropertySet(color) {
-        const PropertySet = require('./PropertySet');
-        const prop = new PropertySet(color);
-        this.properties.push(prop);
-        return prop;
-    }
-
-    removePropertySet(propertySetId) {
-        const index = this.properties.findIndex(p => p.id === propertySetId);
-        if (index !== -1) {
-            return this.properties.splice(index, 1)[0];
-        }
-        return null;
-    }
-
-    getState() {
-        return {
-            id: this.id,
-            name: this.name,
-            hand: this.hand.map(c => ({
-                id: c.id,
-                name: c.name,
-                type: c.type,
-                value: c.value,
-                color: c.color,
-                action: c.action,
-                rentType: c.rentType,
-                wild: c.wild,
-                wildColors: c.wildColors,
-                description: c.description
-            })),
-            properties: this.properties.map(p => ({
-                id: p.id,
-                color: p.color,
-                cards: p.cards.map(c => ({
-                    id: c.id,
-                    name: c.name,
-                    type: c.type,
-                    isJoker: c.type === CARD_TYPES.JOKER,
-                    isWild: c.wild
-                })),
-                hasHouse: p.hasHouse,
-                hasHotel: p.hasHotel,
-                isComplete: p.isComplete(),
-                rentValue: p.calculateRent ? p.calculateRent() : 0
-            })),
-            moneyBank: this.moneyBank.map(c => ({
-                id: c.id,
-                name: c.name,
-                value: c.value
-            })),
-            totalMoney: this.getTotalMoney(),
-            actionsLeft: this.actionsLeft,
-            hasWon: this.hasWon
-        };
-    }
-
-    getPlayer(playerId) {
-        return this.players.find(p => p.id === playerId);
+    getHandCount() {
+        return this.hand.length;
     }
 }
 
