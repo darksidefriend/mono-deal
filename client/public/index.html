@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monopoly Deal - Лобби</title>
     <link rel="stylesheet" href="assets/css/main.css">
+    <style>
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -17,6 +30,9 @@
                     <input type="text" id="playerName" placeholder="Введите ваше имя" maxlength="20">
                 </div>
                 <button id="enterLobby" class="btn-primary">Войти в лобби</button>
+                <div class="connection-status" id="connectionStatus">
+                    Подключение к серверу...
+                </div>
             </div>
         </div>
 
@@ -76,7 +92,7 @@
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
     <script src="assets/js/lobby.js"></script>
 </body>
 </html>

@@ -2,17 +2,19 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const socketHandler = require('./socket/socketHandler');
 const apiRoutes = require('./routes/api');
-const LobbyManager = require('./game/LobbyManager');
 
 const app = express();
 const server = http.createServer(app);
+
+// Настройка Socket.IO с CORS
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: "*", // Разрешаем все origins для разработки
     methods: ["GET", "POST"]
   }
 });
@@ -20,10 +22,24 @@ const io = socketIo(server, {
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('../client/public'));
+
+// Определяем абсолютный путь к клиентским файлам
+const clientPath = path.join(__dirname, '../../client/public');
+
+// Раздаем статические файлы из клиентской папки
+app.use(express.static(clientPath));
+
+// Логирование для отладки
+console.log('Static files served from:', clientPath);
+console.log('Environment:', process.env.NODE_ENV);
 
 // Routes
 app.use('/api', apiRoutes);
+
+// Handle 404
+app.use((req, res) => {
+  res.status(404).sendFile('index.html', { root: clientPath });
+});
 
 // Socket.IO connection
 io.on('connection', (socket) => {
@@ -31,17 +47,8 @@ io.on('connection', (socket) => {
   socketHandler(io, socket);
 });
 
-// Serve game page
-app.get('/game/:id', (req, res) => {
-  res.sendFile('game.html', { root: '../client/public' });
-});
-
-// Serve lobby page
-app.get('/', (req, res) => {
-  res.sendFile('index.html', { root: '../client/public' });
-});
-
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌐 Open http://localhost:${PORT} in your browser`);
 });

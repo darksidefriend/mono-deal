@@ -78,6 +78,8 @@ module.exports = (io, socket) => {
   // Присоединение к лобби
   socket.on('join_lobby', (data) => {
     try {
+      console.log('📥 Присоединение к лобби:', data);
+      
       if (!socket.playerId) {
         throw new Error('Player not registered');
       }
@@ -97,14 +99,16 @@ module.exports = (io, socket) => {
       socket.join(`lobby_${data.lobbyId}`);
       socket.lobbyId = data.lobbyId;
       
+      console.log(`✅ Игрок ${player.name} присоединился к лобби ${lobby.name}`);
+      
       // Уведомляем всех в лобби о новом игроке
       io.to(`lobby_${data.lobbyId}`).emit('lobby_updated', lobby.toJSON());
       
       // Обновляем список лобби для всех
       io.to('lobby').emit('lobbies_updated', lobbyManager.getPublicLobbies());
       
-      console.log(`Player ${player.name} joined lobby ${lobby.name}`);
     } catch (error) {
+      console.error('❌ Ошибка при присоединении к лобби:', error.message);
       socket.emit('error', { message: error.message });
     }
   });
