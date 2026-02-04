@@ -34,7 +34,7 @@ class GameManager {
     console.log('🔗 Подключение к игре...');
     this.updateLoadingMessage('Подключение к серверу...');
     
-    this.socket.once('connect', () => {
+    this.socket.on('connect', () => {
       console.log('✅ Подключено к серверу игры');
       this.updateLoadingMessage('Присоединение к игре...');
       
@@ -47,7 +47,7 @@ class GameManager {
       }, 500);
     });
     
-    this.socket.once('connect_error', (error) => {
+    this.socket.on('connect_error', (error) => {
       console.error('❌ Ошибка подключения к серверу:', error);
       this.showError(`Не удалось подключиться к серверу: ${error.message}`);
     });
@@ -65,14 +65,19 @@ class GameManager {
     // Обновление состояния игры
     this.socket.on('game_update', (update) => {
       console.log('🔄 Обновление игры:', update);
-      this.updateGameState(update);
-      this.updateGameUI();
+      
+      if (update.type === 'state_update' && update.state) {
+        this.gameState = update.state;
+        this.updateGameUI();
+      } else if (update.type === 'log_message') {
+        this.addGameLog(update.message);
+      }
     });
     
     // Смена хода
     this.socket.on('turn_changed', (data) => {
       console.log('🔄 Смена хода:', data);
-      this.addGameLog(`Ход переходит к игроку ${data.playerName}`);
+      this.addGameLog(`Ход переходит к игроку ${data.currentPlayerName}`);
       this.updateTurnInfo(data);
     });
     
@@ -116,28 +121,40 @@ class GameManager {
   
   initEventListeners() {
     // Кнопка завершения хода
-    document.getElementById('end-turn-btn').addEventListener('click', () => {
-      this.socket.emit('end_turn');
-    });
+    const endTurnBtn = document.getElementById('end-turn-btn');
+    if (endTurnBtn) {
+      endTurnBtn.addEventListener('click', () => {
+        this.endTurn();
+      });
+    }
     
     // Кнопка покидания игры
-    document.getElementById('leave-game-btn').addEventListener('click', () => {
-      if (confirm('Вы уверены, что хотите покинуть игру?')) {
-        this.socket.emit('leave_game');
-        window.location.href = '/';
-      }
-    });
+    const leaveGameBtn = document.getElementById('leave-game-btn');
+    if (leaveGameBtn) {
+      leaveGameBtn.addEventListener('click', () => {
+        if (confirm('Вы уверены, что хотите покинуть игру?')) {
+          this.socket.emit('leave_game');
+          window.location.href = '/';
+        }
+      });
+    }
     
     // Чат игры
-    document.getElementById('game-chat-send').addEventListener('click', () => {
-      this.sendChatMessage();
-    });
-    
-    document.getElementById('game-chat-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+    const chatSendBtn = document.getElementById('game-chat-send');
+    if (chatSendBtn) {
+      chatSendBtn.addEventListener('click', () => {
         this.sendChatMessage();
-      }
-    });
+      });
+    }
+    
+    const chatInput = document.getElementById('game-chat-input');
+    if (chatInput) {
+      chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.sendChatMessage();
+        }
+      });
+    }
   }
   
   updateLoadingMessage(message) {
@@ -177,23 +194,27 @@ class GameManager {
   updateGameUI() {
     if (!this.gameState) return;
     
+    console.log('🎨 Обновление UI игры', this.gameState);
+    
     // Обновляем информацию о ходе
-    this.updateTurnInfo(this.gameState);
+    this.updateTurnInfo();
     
     // Обновляем информацию о колоде
     document.getElementById('deck-count').textContent = this.gameState.deckSize || 0;
     
+    // Обновляем информацию о действиях
+    this.updateActionInfo();
+    
     // Обновляем информацию о игроке
     const currentPlayer = this.gameState.players?.find(p => p.id === this.playerId);
     if (currentPlayer) {
+      console.log('👤 Текущий игрок:', currentPlayer);
       document.getElementById('player-name').textContent = currentPlayer.name;
       document.getElementById('hand-count').textContent = currentPlayer.handSize || 0;
-      
-      // Расчет банка (сумма денежных карт)
-      const bankTotal = this.calculateBankTotal(currentPlayer.bank);
-      document.getElementById('bank-total').textContent = `${bankTotal}М`;
+      document.getElementById('bank-total').textContent = `${currentPlayer.bankValue || 0}М`;
       
       // Отображаем руку
+      console.log('🃏 Рука игрока:', currentPlayer.hand);
       this.renderHand(currentPlayer.hand);
       
       // Отображаем собственность
@@ -205,40 +226,68 @@ class GameManager {
     
     // Отображаем противников
     this.renderOpponents(this.gameState.players);
+    
+    // Отображаем историю действий
+    this.renderActionsHistory();
   }
   
-  updateTurnInfo(data) {
+  updateTurnInfo() {
     const turnInfo = document.getElementById('turn-info');
+    const turnIndicator = document.getElementById('player-turn-indicator');
+    const isCurrentTurn = this.gameState?.currentPlayerId === this.playerId;
+    
+    if (turnInfo) {
+      if (isCurrentTurn) {
+        turnInfo.textContent = 'Ваш ход!';
+        turnInfo.style.color = '#2ecc71';
+        if (turnIndicator) {
+          turnIndicator.classList.add('active');
+        }
+      } else {
+        const currentPlayer = this.gameState?.players?.find(p => p.id === this.gameState.currentPlayerId);
+        if (currentPlayer) {
+          turnInfo.textContent = `Ход игрока: ${currentPlayer.name}`;
+        } else {
+          turnInfo.textContent = 'Ожидание хода...';
+        }
+        turnInfo.style.color = '#ecf0f1';
+        if (turnIndicator) {
+          turnIndicator.classList.remove('active');
+        }
+      }
+    }
+  }
+  
+  updateActionInfo() {
+    const actionInfo = document.getElementById('phase-info');
     const endTurnBtn = document.getElementById('end-turn-btn');
     
-    if (data.currentPlayerId === this.playerId) {
-      turnInfo.textContent = 'Ваш ход!';
-      turnInfo.style.color = '#2ecc71';
-      endTurnBtn.disabled = false;
-    } else {
-      const currentPlayer = this.gameState?.players?.find(p => p.id === data.currentPlayerId);
-      if (currentPlayer) {
-        turnInfo.textContent = `Ход игрока: ${currentPlayer.name}`;
-      } else {
-        turnInfo.textContent = 'Ожидание хода...';
-      }
-      turnInfo.style.color = '#ecf0f1';
-      endTurnBtn.disabled = true;
-    }
+    if (!actionInfo) return;
     
-    // Обновляем информацию о фазе
-    const phaseInfo = document.getElementById('phase-info');
-    if (this.gameState?.turnPhase) {
-      const phases = {
-        draw: 'Фаза: Розыгрыш',
-        action: 'Фаза: Действия',
-        end: 'Фаза: Завершение'
-      };
-      phaseInfo.textContent = phases[this.gameState.turnPhase] || 'Фаза: Неизвестно';
+    const currentPlayer = this.gameState?.players?.find(p => p.id === this.playerId);
+    const isCurrentTurn = this.gameState?.currentPlayerId === this.playerId;
+    
+    if (isCurrentTurn) {
+      const actionsLeft = (currentPlayer?.actionPoints || 3) - (currentPlayer?.actionsUsed || 0);
+      actionInfo.textContent = `Действий осталось: ${actionsLeft}/3`;
+      actionInfo.style.color = actionsLeft > 0 ? '#2ecc71' : '#e74c3c';
+      
+      if (endTurnBtn) {
+        endTurnBtn.disabled = false;
+        endTurnBtn.textContent = 'Завершить ход';
+      }
+    } else {
+      actionInfo.textContent = 'Ожидание хода...';
+      actionInfo.style.color = '#ecf0f1';
+      
+      if (endTurnBtn) {
+        endTurnBtn.disabled = true;
+        endTurnBtn.textContent = 'Ожидание хода...';
+      }
     }
   }
   
-  calculateBankTotal(bank) {
+  calculateBankValue(bank) {
     if (!bank || !Array.isArray(bank)) return 0;
     return bank.reduce((total, card) => total + (card.value || 0), 0);
   }
@@ -247,6 +296,7 @@ class GameManager {
     const handContainer = document.getElementById('hand-cards');
     if (!handContainer) return;
     
+    console.log('🎴 Рендерим руку:', hand);
     handContainer.innerHTML = '';
     
     if (!hand || hand.length === 0) {
@@ -351,18 +401,15 @@ class GameManager {
         opponentElement.classList.add('current-turn');
       }
       
-      // Расчет банка противника
-      const bankTotal = this.calculateBankTotal(player.bank);
-      
       opponentElement.innerHTML = `
         <div class="opponent-name">${player.name}</div>
         <div class="opponent-stats">
           <span>Карт: ${player.handSize || 0}</span>
-          <span>Банк: ${bankTotal}М</span>
+          <span>Банк: ${player.bankValue || 0}М</span>
           <span>Собственность: ${player.properties?.length || 0}</span>
         </div>
-        <div class="opponent-properties">
-          ${this.renderOpponentProperties(player.properties)}
+        <div class="opponent-actions">
+          <span>Действий: ${(player.actionPoints || 0) - (player.actionsUsed || 0)}</span>
         </div>
       `;
       
@@ -370,108 +417,130 @@ class GameManager {
     });
   }
   
-  renderOpponentProperties(properties) {
-    if (!properties || properties.length === 0) return '';
-    
-    // Группируем по цветам для отображения
-    const colorCounts = {};
-    properties.forEach(prop => {
-      const color = prop.color || prop.colors?.[0] || 'wild';
-      colorCounts[color] = (colorCounts[color] || 0) + 1;
-    });
-    
-    let html = '';
-    Object.entries(colorCounts).forEach(([color, count]) => {
-      for (let i = 0; i < Math.min(count, 10); i++) {
-        html += `<div class="opponent-property" style="background-color: var(--color-${color})"></div>`;
-      }
-    });
-    
-    return html;
-  }
-  
   createCardElement(card, index, type) {
+    console.log('🎴 Создание элемента карты:', card);
+    
     const cardElement = document.createElement('div');
     cardElement.className = 'card-item';
     cardElement.dataset.index = index;
     cardElement.dataset.cardId = card.id;
     cardElement.dataset.cardType = card.type;
     
-    // Определяем цвет карты для собственности
-    let cardColor = '';
-    if (card.type === 'property') {
-      cardColor = card.color || card.colors?.[0] || 'wild';
+    // Добавляем класс для типа карты
+    if (card.type) {
+      cardElement.classList.add(`card-${card.type}`);
     }
     
     // Определяем, можно ли играть карту
     if (type === 'hand' && this.canPlayCard(card)) {
       cardElement.classList.add('playable');
       cardElement.addEventListener('click', () => this.playCard(card, index));
+    } else if (type === 'hand') {
+      cardElement.style.opacity = '0.8';
+      cardElement.style.cursor = 'default';
     }
     
     const cardName = card.name || 'Карта';
     const cardValue = card.value ? `${card.value}М` : '';
+    const cardType = this.getCardTypeLabel(card.type);
     
     cardElement.innerHTML = `
       <div class="card-content">
-        <div class="card-value">${cardValue}</div>
+        ${cardValue ? `<div class="card-value">${cardValue}</div>` : ''}
         <div class="card-name">${cardName}</div>
+        <div class="card-type">${cardType}</div>
       </div>
     `;
-    
-    // Добавляем цвет для карт собственности
-    if (cardColor) {
-      cardElement.style.borderColor = this.getColorValue(cardColor);
-    }
     
     return cardElement;
   }
   
-  getColorValue(color) {
-    const colors = {
-      brown: '#8B4513',
-      blue: '#3498db',
-      green: '#2ecc71',
-      red: '#e74c3c',
-      yellow: '#f1c40f',
-      purple: '#9b59b6',
-      orange: '#e67e22',
-      black: '#2c3e50',
-      sand: '#d35400',
-      'light-blue': '#85c1e9',
-      wild: '#95a5a6'
+  getCardTypeLabel(type) {
+    const labels = {
+      money: 'Деньги',
+      property: 'Собственность',
+      action: 'Действие',
+      rent: 'Аренда',
+      building: 'Здание',
+      wild: 'Универсальная'
     };
-    return colors[color] || '#ccc';
+    return labels[type] || type;
   }
   
   canPlayCard(card) {
-    // Базовая проверка: можно ли играть карту сейчас
+    // Проверяем, можно ли играть карту сейчас
     if (!this.gameState || this.gameState.currentPlayerId !== this.playerId) {
       return false;
     }
     
-    // Здесь можно добавить дополнительные проверки в зависимости от типа карты
-    // и текущей фазы игры
+    // Проверяем, что есть доступные действия
+    const currentPlayer = this.gameState.players.find(p => p.id === this.playerId);
+    if (!currentPlayer) return false;
     
-    return true;
+    const actionsLeft = currentPlayer.actionPoints - currentPlayer.actionsUsed;
+    if (actionsLeft <= 0) return false;
+    
+    // Для денег - всегда можно положить в банк
+    if (card.type === 'money') {
+      return true;
+    }
+    
+    // Для других типов карт проверки будут добавлены позже
+    return false;
   }
   
   playCard(card, index) {
     console.log('🎯 Играем карту:', card, index);
     
-    // Отправляем серверу информацию о сыгранной карте
-    this.socket.emit('play_card', {
-      cardId: card.id,
-      cardIndex: index,
+    const currentPlayer = this.gameState.players.find(p => p.id === this.playerId);
+    if (!currentPlayer) return;
+    
+    // Проверяем тип карты и вызываем соответствующее действие
+    if (card.type === 'money') {
+      this.putMoneyInBank(card, index);
+    } else {
+      alert('Этот тип карты пока не поддерживается');
+    }
+  }
+  
+  putMoneyInBank(card, index) {
+    if (!confirm(`Положить ${card.name} в банк? Это займет 1 действие.`)) {
+      return;
+    }
+    
+    console.log('💰 Отправка денег в банк:', card, index);
+    
+    this.socket.emit('put_money_in_bank', {
       gameId: this.gameId,
-      playerId: this.playerId
+      playerId: this.playerId,
+      cardIndex: index
     });
     
-    // Временно убираем карту из руки (сервер подтвердит обновление)
+    // Временно убираем карту из руки
     const cardElement = document.querySelector(`.card-item[data-index="${index}"]`);
     if (cardElement) {
       cardElement.style.opacity = '0.5';
       cardElement.style.pointerEvents = 'none';
+    }
+  }
+  
+  endTurn() {
+    if (!confirm('Завершить ход?')) {
+      return;
+    }
+    
+    console.log('🔄 Завершение хода');
+    
+    this.socket.emit('end_turn', {
+      gameId: this.gameId,
+      playerId: this.playerId
+    });
+    
+    // Блокируем кнопку до подтверждения сервера
+    const endTurnBtn = document.getElementById('end-turn-btn');
+    if (endTurnBtn) {
+      endTurnBtn.disabled = true;
+      endTurnBtn.textContent = 'Завершение...';
     }
   }
   
@@ -480,14 +549,16 @@ class GameManager {
     const message = input.value.trim();
     
     if (message) {
-      this.socket.emit('game_chat', {
-        gameId: this.gameId,
-        playerId: this.playerId,
-        message: message
-      });
-      
+      // Пока просто добавляем сообщение локально
       this.addChatMessage('Вы', message, true);
       input.value = '';
+      
+      // В будущем будем отправлять на сервер
+      // this.socket.emit('game_chat', {
+      //   gameId: this.gameId,
+      //   playerId: this.playerId,
+      //   message: message
+      // });
     }
   }
   
@@ -519,16 +590,48 @@ class GameManager {
     }
   }
   
-  updateGameState(update) {
-    // Обновляем состояние игры на основе полученных данных
-    if (update.gameState) {
-      this.gameState = { ...this.gameState, ...update.gameState };
-    }
+  renderActionsHistory() {
+    const gameLog = document.getElementById('game-log-messages');
+    if (!gameLog || !this.gameState.actionsHistory) return;
     
-    // Добавляем сообщение в лог
-    if (update.message) {
-      this.addGameLog(update.message);
-    }
+    gameLog.innerHTML = '';
+    
+    // Берем последние 5 действий
+    const recentActions = this.gameState.actionsHistory.slice(-5);
+    
+    recentActions.forEach(action => {
+      const logElement = document.createElement('div');
+      logElement.className = 'log-entry';
+      
+      let message = '';
+      switch (action.type) {
+        case 'money_to_bank':
+          message = `${action.playerName} положил(а) ${action.card?.name || 'карту'} в банк`;
+          break;
+        case 'discard':
+          message = `${action.playerName} сбросил(а) карту`;
+          break;
+        case 'game_start':
+          message = action.message || 'Игра началась!';
+          break;
+        default:
+          message = `${action.playerName || 'Кто-то'} совершил(а) действие`;
+      }
+      
+      const time = action.timestamp ? 
+        new Date(action.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) :
+        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      logElement.innerHTML = `
+        <span class="log-time">[${time}]</span>
+        <span class="log-message">${message}</span>
+      `;
+      
+      gameLog.appendChild(logElement);
+    });
+    
+    // Прокручиваем вниз
+    gameLog.scrollTop = gameLog.scrollHeight;
   }
   
   showGameOver(data) {
@@ -542,6 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('🎮 Загрузка игровой страницы...');
   try {
     window.gameManager = new GameManager();
+    console.log('✅ GameManager создан');
   } catch (error) {
     console.error('❌ Ошибка при создании GameManager:', error);
     document.getElementById('loading-message').textContent = 'Ошибка загрузки игры';

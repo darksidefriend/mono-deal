@@ -352,35 +352,140 @@ module.exports = (io, socket) => {
     }
   });
 
-  socket.on('end_turn', () => {
+  socket.on('put_money_in_bank', (data) => {
     try {
-      if (!socket.gameId || !socket.playerId) {
-        throw new Error('Not in game');
-      }
-
-      const game = gameManager.getGame(socket.gameId);
+      console.log('💰 Игрок хочет положить деньги в банк:', data);
+      
+      const game = gameManager.getGame(data.gameId);
       if (!game) {
         throw new Error('Game not found');
       }
-
-      // Находим текущего игрока
-      const currentPlayerIndex = game.players.findIndex(p => p.id === game.currentPlayerId);
       
-      // Передаем ход следующему игроку
-      const nextPlayerIndex = (currentPlayerIndex + 1) % game.players.length;
-      const nextPlayer = game.players[nextPlayerIndex];
+      const result = gameManager.putMoneyInBank(game, data.playerId, data.cardIndex);
       
-      game.currentPlayerId = nextPlayer.id;
+      // Отправляем обновление всем игрокам
+      const updateData = {
+        type: 'money_to_bank',
+        playerId: data.playerId,
+        playerName: game.players.find(p => p.id === data.playerId)?.name,
+        card: result.card,
+        actionsLeft: result.actionsLeft,
+        bankValue: result.bankValue
+      };
       
-      // Уведомляем всех игроков о смене хода
-      io.to(`game_${socket.gameId}`).emit('turn_changed', {
-        currentPlayerId: nextPlayer.id,
-        playerName: nextPlayer.name
+      // Отправляем полное обновление состояния игры
+      game.players.forEach(player => {
+        const gameState = gameManager.getGameState(data.gameId, player.id);
+        io.to(player.socketId).emit('game_update', {
+          type: 'state_update',
+          state: gameState
+        });
       });
       
-      console.log(`🔄 Ход перешел от ${socket.playerId} к ${nextPlayer.id}`);
+      // Отправляем сообщение в лог
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${updateData.playerName} положил(а) ${result.card.name} в банк`
+      });
+      
+    } catch (error) {
+      console.error('❌ Ошибка при попытке положить деньги в банк:', error.message);
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('end_turn', (data) => {
+    try {
+      console.log('🔄 Игрок завершает ход:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Игра не найдена');
+      }
+      
+      // Проверяем, что это ход текущего игрока
+      const currentPlayer = game.players.find(p => p.id === data.playerId);
+      if (!currentPlayer) {
+        throw new Error('Игрок не найден в игре');
+      }
+      
+      if (game.currentPlayerId !== data.playerId) {
+        throw new Error('Не ваш ход');
+      }
+      
+      // Проверяем, что в руке не больше 7 карт
+      if (currentPlayer.hand.length > 7) {
+        throw new Error('У вас слишком много карт в руке. Сбросьте лишние карты.');
+      }
+      
+      // Завершаем ход и получаем следующего игрока
+      const nextPlayerId = gameManager.endTurn(game);
+      const nextPlayer = game.players.find(p => p.id === nextPlayerId);
+      
+      if (!nextPlayer) {
+        throw new Error('Не удалось определить следующего игрока');
+      }
+      
+      console.log(`✅ Ход завершен. Текущий игрок: ${currentPlayer.name}, следующий: ${nextPlayer.name}`);
+      
+      // Отправляем сообщение о смене хода всем игрокам
+      io.to(`game_${data.gameId}`).emit('turn_changed', {
+        previousPlayerId: data.playerId,
+        previousPlayerName: currentPlayer.name,
+        currentPlayerId: nextPlayer.id,
+        currentPlayerName: nextPlayer.name
+      });
+      
+      // Отправляем обновление состояния игры всем игрокам
+      game.players.forEach(player => {
+        const gameState = gameManager.getGameState(data.gameId, player.id);
+        io.to(player.socketId).emit('game_update', {
+          type: 'state_update',
+          state: gameState
+        });
+      });
+      
+      // Отправляем сообщение в лог
+      io.to(`game_${data.gameId}`).emit('game_update', {
+        type: 'log_message',
+        message: `${currentPlayer.name} завершает ход. Ход переходит к ${nextPlayer.name}`
+      });
+      
     } catch (error) {
       console.error('❌ Ошибка при завершении хода:', error.message);
+      socket.emit('error', { message: error.message });
+    }
+  });
+
+  socket.on('discard_card', (data) => {
+    try {
+      console.log('🗑️ Игрок хочет сбросить карту:', data);
+      
+      const game = gameManager.getGame(data.gameId);
+      if (!game) {
+        throw new Error('Game not found');
+      }
+      
+      const result = gameManager.discardCard(game, data.playerId, data.cardIndex);
+      
+      // Отправляем обновление состояния игры
+      const player = game.players.find(p => p.id === data.playerId);
+      if (player) {
+        const gameState = gameManager.getGameState(data.gameId, player.id);
+        io.to(player.socketId).emit('game_update', {
+          type: 'state_update',
+          state: gameState
+        });
+        
+        // Отправляем сообщение в лог
+        io.to(`game_${data.gameId}`).emit('game_update', {
+          type: 'log_message',
+          message: `${player.name} сбросил(а) карту`
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Ошибка при сбросе карты:', error.message);
       socket.emit('error', { message: error.message });
     }
   });

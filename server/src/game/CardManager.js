@@ -88,6 +88,31 @@ class CardManager {
   getDiscardPileSize() {
     return this.discardPile.length;
   }
+
+    // Добавим метод в класс CardManager
+  isMoneyCard(card) {
+    return card.type === 'money';
+  }
+
+  isPropertyCard(card) {
+    return card.type === 'property';
+  }
+
+  isActionCard(card) {
+    return card.type === 'action';
+  }
+
+  isRentCard(card) {
+    return card.type === 'rent';
+  }
+
+  isBuildingCard(card) {
+    return card.type === 'building';
+  }
+
+  isWildCard(card) {
+    return card.type === 'wild';
+  }
 }
 
 module.exports = CardManager;

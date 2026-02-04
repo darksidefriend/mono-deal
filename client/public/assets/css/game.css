@@ -436,3 +436,160 @@
     border-radius: 2px;
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
+
+/* Улучшаем стили карт */
+.card-item {
+    width: 90px;
+    height: 130px;
+    background: white;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    border-color: #3498db;
+}
+
+.card-item.playable {
+    border-color: #2ecc71;
+    border-width: 3px;
+}
+
+.card-content {
+    padding: 8px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-value {
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #e74c3c;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.card-name {
+    font-size: 0.8rem;
+    text-align: center;
+    word-break: break-word;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-type {
+    font-size: 0.7rem;
+    text-align: center;
+    color: #7f8c8d;
+    margin-top: 5px;
+    padding: 2px 5px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+/* Цвета для разных типов карт */
+.card-money {
+    background: linear-gradient(135deg, #f1c40f, #f39c12);
+    color: #2c3e50;
+}
+
+.card-property {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
+
+.card-action {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.card-rent {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+}
+
+.card-building {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+}
+
+.card-wild {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    color: white;
+}
+
+/* Контейнеры для карт */
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 150px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    justify-content: center;
+    align-items: center;
+}
+
+.empty-hand, .empty-bank, .empty-properties {
+    width: 100%;
+    text-align: center;
+    color: #bdc3c7;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Кнопка завершения хода */
+#end-turn-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#end-turn-btn:not(:disabled):hover {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+/* Индикатор хода */
+#player-turn-indicator {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    display: none;
+    animation: pulse 2s infinite;
+    font-size: 0.9rem;
+}
+
+#player-turn-indicator.active {
+    display: inline-block;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Улучшаем видимость текста на картах */
+.card-item {
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+}
