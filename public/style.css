@@ -1,0 +1,30 @@
+body {
+  background: #222;
+  color: #fff;
+  font-family: sans-serif;
+}
+
+#hand {
+  display: flex;
+  gap: 10px;
+}
+
+.card {
+  padding: 10px;
+  background: #444;
+  border-radius: 5px;
+}
+
+#modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
