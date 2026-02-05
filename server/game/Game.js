@@ -40,6 +40,8 @@ class Game {
 
     startTurn() {
         const player = this.getCurrentPlayer();
+        if (!player) return;
+        
         player.actionsPlayed = 0;
         player.hasDrawnCards = false;
         this.actionsRemaining = 3;

@@ -63,6 +63,26 @@ class MonopolyDealClient {
         this.socket.on('error', (message) => {
             this.showNotification(message, 'error');
         });
+
+        this.socket.on('gameJoined', (data) => {
+            this.playerId = data.playerId;
+            this.roomId = data.roomId;
+            this.showWaitingRoom(data);
+        });
+
+        this.socket.on('playerJoined', (data) => {
+            // Обновляем список игроков для всех в комнате
+            if (this.roomId) {
+                this.updateWaitingRoom(data);
+            }
+        });
+
+        this.socket.on('gameStarted', (state) => {
+            this.gameState = state;
+            document.getElementById('waitingRoom').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            this.renderGame(state);
+        });
     }
 
     createGame() {
@@ -91,11 +111,20 @@ class MonopolyDealClient {
         document.getElementById('waitingRoom').classList.remove('hidden');
         
         document.getElementById('roomIdDisplay').textContent = data.roomId;
-        this.updatePlayerList(data.game.players);
         
-        if (data.game.players.length >= 2) {
-            document.getElementById('startGameBtn').disabled = false;
+        // Обновляем список игроков
+        if (data.players) {
+            this.updatePlayerList(data.players);
+        } else if (data.game && data.game.players) {
+            this.updatePlayerList(data.game.players);
         }
+        
+        // Показываем кнопку "Начать игру" только создателю
+        const startBtn = document.getElementById('startGameBtn');
+        const isCreator = data.players && data.players[0] && data.players[0].id === this.playerId;
+        startBtn.style.display = isCreator ? 'block' : 'none';
+        
+        document.getElementById('playerCount').textContent = `${data.game.players.length}/5`;
     }
 
     updateWaitingRoom(data) {
@@ -110,8 +139,12 @@ class MonopolyDealClient {
 
     updatePlayerList(players) {
         const playerList = document.getElementById('playerList');
+        if (!playerList) return;
+        
         playerList.innerHTML = players.map(player => 
-            `<div class="player-item">${player.name}</div>`
+            `<div class="player-item ${player.id === this.playerId ? 'current' : ''}">
+                ${player.name} ${player.id === this.playerId ? '(Вы)' : ''}
+            </div>`
         ).join('');
     }
 

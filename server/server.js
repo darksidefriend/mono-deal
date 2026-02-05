@@ -33,12 +33,17 @@ io.on('connection', (socket) => {
     socket.on('joinGame', ({ roomId, playerName }) => {
         const game = games.get(roomId);
         if (!game) {
-            socket.emit('error', 'Game not found');
+            socket.emit('error', { message: 'Игра не найдена' });
             return;
         }
         
         if (game.players.length >= 5) {
-            socket.emit('error', 'Game is full');
+            socket.emit('error', { message: 'Игра заполнена (максимум 5 игроков)' });
+            return;
+        }
+        
+        if (game.gameState !== 'waiting') {
+            socket.emit('error', { message: 'Игра уже началась' });
             return;
         }
         
@@ -46,7 +51,21 @@ io.on('connection', (socket) => {
         players.set(socket.id, { roomId, playerId });
         
         socket.join(roomId);
-        io.to(roomId).emit('playerJoined', { playerId, game: game.getState() });
+        
+        // Отправляем присоединившемуся игроку информацию
+        socket.emit('gameJoined', { 
+            roomId, 
+            playerId, 
+            game: game.getState(),
+            players: game.players.map(p => ({ id: p.id, name: p.name }))
+        });
+        
+        // Оповещаем всех в комнате о новом игроке
+        io.to(roomId).emit('playerJoined', { 
+            playerId, 
+            playerName,
+            game: game.getState()
+        });
     });
 
     socket.on('playCard', ({ cardId, targetPlayerId, propertyColor, useDoubleRent }) => {
@@ -167,6 +186,16 @@ io.on('connection', (socket) => {
             }
             
             players.delete(socket.id);
+        }
+    });
+
+    socket.on('startGame', (roomId) => {
+        const game = games.get(roomId);
+        if (!game) return;
+        
+        if (game.gameState === 'waiting' && game.players.length >= 2) {
+            game.startGame();
+            io.to(roomId).emit('gameStarted', game.getState());
         }
     });
 });
